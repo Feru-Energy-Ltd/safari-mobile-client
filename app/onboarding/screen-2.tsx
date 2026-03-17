@@ -15,7 +15,7 @@ export default function OnboardingScreen3() {
                 <View className="flex-[0.55] items-center justify-center">
                     <Image
                         source={require('@/assets/images/onboarding-3.png')}
-                        style={{ width: width, height: width }}
+                        style={{ width: width * 1.2, height: width * 1.2 }}
                         resizeMode="contain"
                     />
                 </View>
