@@ -1,31 +1,38 @@
+import { Button } from '@/components/Button';
+import { PaginationIndicator } from '@/components/PaginationIndicator';
+import { useColorScheme } from '@/components/useColorScheme';
 import { router } from 'expo-router';
 import React from 'react';
 import { Dimensions, Image, SafeAreaView, Text, View } from 'react-native';
 
-import { Button } from '@/components/Button';
-import { PaginationIndicator } from '@/components/PaginationIndicator';
-
 const { width } = Dimensions.get('window');
 
 export default function OnboardingScreen1() {
+    const colorScheme = useColorScheme();
+    const isDarkMode = colorScheme === 'dark';
+
     return (
-        <SafeAreaView className="flex-1 bg-white">
+        <SafeAreaView className="flex-1 bg-white dark:bg-[#1C1F26]">
             <View className="flex-1 px-6 pt-12 pb-8">
                 {/* Image Container */}
-                <View className="flex-[0.55] items-center justify-center">
+                <View className="flex-[0.55] translate-y-[30px] items-center justify-center">
                     <Image
-                        source={require('@/assets/images/onboarding-1.png')}
-                        style={{ width: width * 1.2, height: width * 1.2 }}
+                        source={
+                            isDarkMode
+                                ? require('@/assets/images/onboarding-1-dark.png')
+                                : require('@/assets/images/onboarding-1.png')
+                        }
+                        style={{ width: width * 1.4, height: width * 1.4 }}
                         resizeMode="contain"
                     />
                 </View>
 
                 {/* Text Container */}
                 <View className="flex-[0.3] items-center mt-8">
-                    <Text className="text-3xl font-bold text-center text-gray-900 mb-4 px-2">
+                    <Text className="text-3xl font-bold text-center text-gray-900 dark:text-white mb-4 px-2">
                         Easily find EV charging stations around you
                     </Text>
-                    <Text className="text-base text-center text-gray-400 px-6 leading-6">
+                    <Text className="text-base text-center text-gray-400 dark:text-gray-400 px-6 leading-6">
                         Discover available chargers nearby in real-time, get directions, and start charging with ease.
                     </Text>
                 </View>

@@ -1,15 +1,10 @@
 import { Text, View } from 'react-native';
 
-import EditScreenInfo from '@/components/EditScreenInfo';
 
-export default function TabOneScreen() {
+export default function HomeScreen() {
   return (
-    <View className="flex-1 items-center justify-center">
-      <Text className="text-[20px] font-bold dark:text-white">Tab One</Text>
-      <View
-        className="my-[30px] h-[1px] w-[80%] bg-[#eee] dark:bg-white/10"
-      />
-      <EditScreenInfo path="app/(tabs)/index.tsx" />
+    <View className="flex-1 items-center justify-center bg-white dark:bg-[#1C1F26]">
+      <Text className="text-[20px] font-bold text-gray-900 dark:text-white">Home</Text>
     </View>
   );
 }

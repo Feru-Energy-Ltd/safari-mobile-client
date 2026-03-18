@@ -1,31 +1,38 @@
+import { Button } from '@/components/Button';
+import { PaginationIndicator } from '@/components/PaginationIndicator';
+import { useColorScheme } from '@/components/useColorScheme';
 import { router } from 'expo-router';
 import React from 'react';
 import { Dimensions, Image, SafeAreaView, Text, View } from 'react-native';
 
-import { Button } from '@/components/Button';
-import { PaginationIndicator } from '@/components/PaginationIndicator';
-
 const { width } = Dimensions.get('window');
 
 export default function OnboardingScreen3() {
+    const colorScheme = useColorScheme();
+    const isDarkMode = colorScheme === 'dark';
+
     return (
-        <SafeAreaView className="flex-1 bg-white">
+        <SafeAreaView className="flex-1 bg-white dark:bg-[#181A20]">
             <View className="flex-1 px-6 pt-12 pb-8">
                 {/* Image Container */}
-                <View className="flex-[0.55] items-center justify-center">
+                <View className="flex-[0.55] translate-y-[10px] items-center justify-center">
                     <Image
-                        source={require('@/assets/images/onboarding-3.png')}
-                        style={{ width: width * 1.2, height: width * 1.2 }}
+                        source={
+                            isDarkMode
+                                ? require('@/assets/images/onboarding-3-dark.png')
+                                : require('@/assets/images/onboarding-3.png')
+                        }
+                        style={{ width: width * 1.3, height: width * 1.3 }}
                         resizeMode="contain"
                     />
                 </View>
 
                 {/* Text Container */}
                 <View className="flex-[0.3] items-center mt-8">
-                    <Text className="text-3xl font-bold text-center text-gray-900 mb-4 px-2">
+                    <Text className="text-3xl font-bold text-center text-gray-900 dark:text-white mb-4 px-2">
                         Safe and secure payments for charging
                     </Text>
-                    <Text className="text-base text-center text-gray-400 px-6 leading-6">
+                    <Text className="text-base text-center text-gray-400 dark:text-gray-400 px-6 leading-6">
                         Enjoy a variety of secure payment methods for your convenience and peace of mind.
                     </Text>
                 </View>
@@ -40,14 +47,14 @@ export default function OnboardingScreen3() {
                         <Button
                             title="Skip"
                             type="secondary"
-                            onPress={() => router.replace('/(tabs)')}
+                            onPress={() => router.replace('/welcome')}
                             className="flex-1"
                         />
                         <View className="w-4" />
                         <Button
                             title="Next"
                             type="primary"
-                            onPress={() => router.push('/(tabs)')}
+                            onPress={() => router.push('/welcome')}
                             className="flex-1"
                         />
                     </View>

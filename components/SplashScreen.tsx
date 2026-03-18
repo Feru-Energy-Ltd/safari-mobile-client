@@ -48,7 +48,7 @@ export const SplashScreen = ({ onAnimationComplete }: SplashScreenProps) => {
     }
 
     return (
-        <View className="bg-white flex-1 items-center justify-center">
+        <View className="bg-white dark:bg-[#1C1F26] flex-1 items-center justify-center">
             <Animated.View
                 style={{
                     opacity: fadeAnim,
