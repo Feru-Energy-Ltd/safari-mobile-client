@@ -15,6 +15,7 @@ export default function SignupScreen() {
     const [phone, setPhone] = useState("");
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
+    const [isAgreed, setIsAgreed] = useState(false);
 
     const [countryCode, setCountryCode] = useState<CountryCode>('RW');
     const [callingCode, setCallingCode] = useState('250');
@@ -136,11 +137,20 @@ export default function SignupScreen() {
 
                     {/* Agreement Checkbox */}
                     <View className="flex-row items-start mb-8 mt-2 px-1">
-                        <View className="w-5 h-5 rounded bg-[#01B764] items-center justify-center mt-1">
-                            <Ionicons name="checkmark" size={14} color="white" />
-                        </View>
+                        <TouchableOpacity
+                            onPress={() => setIsAgreed(!isAgreed)}
+                            className={`w-5 h-5 rounded border ${isAgreed ? 'bg-[#01B764] border-[#01B764]' : 'border-gray-300 dark:border-gray-600'} items-center justify-center mt-1`}
+                        >
+                            {isAgreed && <Ionicons name="checkmark" size={14} color="white" />}
+                        </TouchableOpacity>
                         <Text className="ml-3 flex-1 text-[14px] text-gray-500 dark:text-gray-400 leading-5">
-                            I agree to SafariCharger <Text className="text-[#01B764] font-semibold">Terms & Privacy Policy</Text>.
+                            I agree to SafariCharger{' '}
+                            <Text
+                                className="text-[#01B764] font-semibold"
+                                onPress={() => router.push('/terms')}
+                            >
+                                Terms & Privacy Policy
+                            </Text>.
                         </Text>
                     </View>
 

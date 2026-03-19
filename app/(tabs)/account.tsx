@@ -1,14 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import React from 'react';
 import {
     SafeAreaView,
     ScrollView,
+    StyleSheet,
     Switch,
     Text,
     TouchableOpacity,
     View,
-    StyleSheet,
 } from 'react-native';
 
 interface SettingsItemProps {
@@ -84,6 +85,7 @@ const SettingsItem = ({
 
 export default function AccountScreen() {
     const { colorScheme, setColorScheme } = useColorScheme();
+    const router = useRouter();
     const isDarkMode = colorScheme === 'dark';
 
     const toggleDarkMode = () => {
@@ -193,6 +195,7 @@ export default function AccountScreen() {
                         textColor="text-red-500"
                         iconColor="#EF4444"
                         showChevron={false}
+                        onPress={() => router.replace('/login')}
                     />
                 </View>
             </ScrollView>

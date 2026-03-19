@@ -26,7 +26,7 @@ export default function WelcomeScreen() {
 
                 {/* Typography Section */}
                 <View className="flex-[0.25] items-center justify-center">
-                    <Text className="text-4xl font-semibold text-center text-gray-900 dark:text-white mb-4">
+                    <Text className="text-3xl font-semibold text-center text-gray-900 dark:text-white mb-4">
                         Welcome to SafariCharger
                     </Text>
                     <Text className="text-[18px] text-gray-500 dark:text-gray-400 text-center px-6 leading-6">
@@ -55,9 +55,12 @@ export default function WelcomeScreen() {
                     <View className="mt-10 items-center">
                         <Text className="text-center text-gray-400 dark:text-gray-500 text-[13px] leading-5">
                             By continuing you accept our{'\n'}
-                            <Text className="text-[#01B764] font-bold">Terms of Service</Text>
-                            {' & '}
-                            <Text className="text-[#01B764] font-bold">Privacy Policy</Text>
+                            <Text
+                                className="text-[#01B764] font-semibold"
+                                onPress={() => router.push('/terms')}
+                            >
+                                Terms & Privacy Policy
+                            </Text>.
                         </Text>
                     </View>
                 </View>
