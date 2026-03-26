@@ -1,9 +1,12 @@
 import { Button } from '@/components/Button';
+import { AlertType, CustomAlert } from '@/components/CustomAlert';
 import { useColorScheme } from '@/components/useColorScheme';
+import { login } from '@/services/auth.service';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import Toast from 'react-native-toast-message';
 
 export default function LoginScreen() {
     const colorScheme = useColorScheme();
@@ -11,6 +14,54 @@ export default function LoginScreen() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+
+    // Alert State
+    const [alertConfig, setAlertConfig] = useState<{
+        visible: boolean;
+        type: AlertType;
+        title: string;
+        message: string;
+    }>({
+        visible: false,
+        type: 'error',
+        title: '',
+        message: '',
+    });
+
+    const showAlert = (type: AlertType, title: string, message: string) => {
+        setAlertConfig({ visible: true, type, title, message });
+    };
+
+    const handleLogin = async () => {
+        if (!email || !password) {
+            showAlert('warning', 'Validation', 'Please enter your email and password.');
+            return;
+        }
+        setIsLoading(true);
+        try {
+            const data = await login({ email, password });
+            console.log('Login success:', data);
+
+            Toast.show({
+                type: 'success',
+                text1: 'Login Successful',
+                text2: 'Welcome back to SafariCharger!',
+                position: 'top',
+                visibilityTime: 3000,
+                autoHide: true,
+                topOffset: 60,
+            });
+
+            router.push('/(tabs)');
+        } catch (error: any) {
+            // console.error('Login error:', error);
+            showAlert('error', 'Login Failed', error?.message ?? 'Could not reach the server.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
 
     const labelClasses = "text-[16px] font-semibold text-gray-900 dark:text-white mb-2";
     const inputClasses = "flex-1 py-3 text-[16px] text-gray-900 dark:text-white";
@@ -27,7 +78,7 @@ export default function LoginScreen() {
                 <ScrollView showsVerticalScrollIndicator={false}>
                     <View className="mb-10">
                         <Text className="text-3xl font-semibold text-gray-900 dark:text-white mb-2">
-                            Login to your Account 🔑
+                            Login to your Account
                         </Text>
                         <Text className="text-gray-500 dark:text-gray-400 text-[15px]">
                             Welcome back! Please enter your details.
@@ -89,7 +140,9 @@ export default function LoginScreen() {
                     <Button
                         title="Log in"
                         type="primary"
-                        onPress={() => router.push('/(tabs)')}
+                        onPress={handleLogin}
+                        loading={isLoading}
+                        disabled={isLoading}
                         className="w-full mb-8"
                     />
 
@@ -101,6 +154,15 @@ export default function LoginScreen() {
                     </View>
                 </ScrollView>
             </View>
+
+            <CustomAlert
+                visible={alertConfig.visible}
+                type={alertConfig.type}
+                title={alertConfig.title}
+                message={alertConfig.message}
+                onClose={() => setAlertConfig({ ...alertConfig, visible: false })}
+            />
         </SafeAreaView>
     );
 }
+

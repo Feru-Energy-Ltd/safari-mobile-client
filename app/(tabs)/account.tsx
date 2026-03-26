@@ -1,7 +1,9 @@
+import { AlertType, CustomAlert } from '@/components/CustomAlert';
+import { logout } from '@/services/auth.service';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useColorScheme } from 'nativewind';
-import React from 'react';
+import React, { useState } from 'react';
 import {
     SafeAreaView,
     ScrollView,
@@ -9,8 +11,9 @@ import {
     Switch,
     Text,
     TouchableOpacity,
-    View,
+    View
 } from 'react-native';
+
 
 interface SettingsItemProps {
     icon: keyof typeof Ionicons.glyphMap;
@@ -92,7 +95,26 @@ export default function AccountScreen() {
         setColorScheme(isDarkMode ? 'light' : 'dark');
     };
 
+    // Alert State
+    const [alertConfig, setAlertConfig] = useState<{
+        visible: boolean;
+        type: AlertType;
+        title: string;
+        message: string;
+        onConfirm?: () => void;
+    }>({
+        visible: false,
+        type: 'confirm',
+        title: '',
+        message: '',
+    });
+
+    const showConfirm = (title: string, message: string, onConfirm: () => void) => {
+        setAlertConfig({ visible: true, type: 'confirm', title, message, onConfirm });
+    };
+
     const dividerColor = isDarkMode ? '#2A2D35' : '#F0F0F0';
+
     const bgColor = isDarkMode ? '#1C1F26' : '#FFFFFF';
 
     return (
@@ -195,13 +217,33 @@ export default function AccountScreen() {
                         textColor="text-red-500"
                         iconColor="#EF4444"
                         showChevron={false}
-                        onPress={() => router.replace('/login')}
+                        onPress={() => {
+                            showConfirm(
+                                'Logout',
+                                'Are you sure you want to logout of your account?',
+                                async () => {
+                                    await logout();
+                                    router.replace('/login');
+                                }
+                            );
+                        }}
                     />
                 </View>
             </ScrollView>
+
+            <CustomAlert
+                visible={alertConfig.visible}
+                type={alertConfig.type}
+                title={alertConfig.title}
+                message={alertConfig.message}
+                confirmText={alertConfig.type === 'confirm' ? 'Logout' : 'OK'}
+                onConfirm={alertConfig.onConfirm}
+                onClose={() => setAlertConfig({ ...alertConfig, visible: false })}
+            />
         </SafeAreaView>
     );
 }
+
 
 const styles = StyleSheet.create({
     safeArea: {

@@ -1,15 +1,17 @@
+import 'react-native-reanimated';
+import '../global.css';
+
+import { toastConfig } from '@/components/ToastConfig';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useColorScheme } from 'react-native';
-import 'react-native-reanimated';
-import '../global.css';
+import Toast from 'react-native-toast-message';
 
 
 import { SplashScreen as CustomSplashScreen } from '@/components/SplashScreen';
-import { useState } from 'react';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -71,6 +73,7 @@ function RootLayoutNav() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
       </Stack>
+      <Toast config={toastConfig} />
     </ThemeProvider>
   );
 }

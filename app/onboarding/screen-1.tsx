@@ -47,7 +47,7 @@ export default function OnboardingScreen2() {
                         <Button
                             title="Skip"
                             type="secondary"
-                            onPress={() => router.replace('/(tabs)')}
+                            onPress={() => router.replace('/welcome')}
                             className="flex-1"
                         />
                         <View className="w-4" />

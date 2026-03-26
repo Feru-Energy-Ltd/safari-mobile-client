@@ -1,23 +1,46 @@
 import { Button } from '@/components/Button';
+import { AlertType, CustomAlert } from '@/components/CustomAlert';
 import { useColorScheme } from '@/components/useColorScheme';
+import { register } from '@/services/auth.service';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import CountryPicker, { Country, CountryCode, DARK_THEME, DEFAULT_THEME } from 'react-native-country-picker-modal';
 
+
 export default function SignupScreen() {
     const colorScheme = useColorScheme();
     const isDarkMode = colorScheme === 'dark';
 
-    const [fullName, setFullName] = useState("");
-    const [email, setEmail] = useState("");
-    const [phone, setPhone] = useState("");
-    const [password, setPassword] = useState("");
+    const [fullName, setFullName] = useState('');
+    const [email, setEmail] = useState('');
+    const [phone, setPhone] = useState('');
+    const [password, setPassword] = useState('');
+    const [displayName, setDisplayName] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [isAgreed, setIsAgreed] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+
+    // Alert State
+    const [alertConfig, setAlertConfig] = useState<{
+        visible: boolean;
+        type: AlertType;
+        title: string;
+        message: string;
+    }>({
+        visible: false,
+        type: 'error',
+        title: '',
+        message: '',
+    });
+
+    const showAlert = (type: AlertType, title: string, message: string) => {
+        setAlertConfig({ visible: true, type, title, message });
+    };
 
     const [countryCode, setCountryCode] = useState<CountryCode>('RW');
+
     const [callingCode, setCallingCode] = useState('250');
     const [showCountryPicker, setShowCountryPicker] = useState(false);
 
@@ -26,9 +49,46 @@ export default function SignupScreen() {
         setCallingCode(country.callingCode[0]);
     };
 
-    const labelClasses = "text-[16px] font-semibold text-gray-900 dark:text-white mb-2";
-    const inputClasses = "flex-1 mb-1 py-2 text-[16px] text-gray-900 dark:text-white";
-    const underlineClasses = "h-[1.5px] bg-[#01B764] mb-6";
+    const handleRegister = async () => {
+        if (!fullName || !email || !phone || !password) {
+            showAlert('warning', 'Validation', 'Please fill in all required fields.');
+            return;
+        }
+        if (!isAgreed) {
+            showAlert('warning', 'Terms', 'Please agree to the Terms & Privacy Policy to continue.');
+            return;
+        }
+
+
+        // Split full name into firstName / lastName
+        const parts = fullName.trim().split(/\s+/);
+        const firstName = parts[0];
+        const lastName = parts.slice(1).join(' ') || parts[0];
+
+        setIsLoading(true);
+        try {
+            const data = await register({
+                email,
+                password,
+                firstName,
+                lastName,
+                phone: `+${callingCode}${phone}`,
+                displayName: displayName || fullName.trim(),
+            });
+            console.log('Register success:', data);
+            router.push('/(tabs)');
+        } catch (error: any) {
+            // console.error('Register error:', error);
+            showAlert('error', 'Registration Failed', error?.message ?? 'Could not reach the server.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+
+    const labelClasses = 'text-[16px] font-semibold text-gray-900 dark:text-white mb-2';
+    const inputClasses = 'flex-1 mb-1 py-2 text-[16px] text-gray-900 dark:text-white';
+    const underlineClasses = 'h-[1.5px] bg-[#01B764] mb-6';
 
     return (
         <SafeAreaView className="flex-1 bg-white dark:bg-[#1C1F26]">
@@ -41,7 +101,7 @@ export default function SignupScreen() {
                 <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
                     <View className="mb-8">
                         <Text className="text-3xl font-semibold text-gray-900 dark:text-white mb-2">
-                            Create your Account ✨
+                            Create your Account
                         </Text>
                         <Text className="text-gray-500 dark:text-gray-400 text-[15px]">
                             Join SafariCharger today!
@@ -57,6 +117,22 @@ export default function SignupScreen() {
                             placeholderTextColor={isDarkMode ? '#555A64' : '#9E9E9E'}
                             value={fullName}
                             onChangeText={setFullName}
+                        />
+                        <View className={underlineClasses} />
+                    </View>
+
+                    {/* Display Name (optional) */}
+                    <View className="mb-2 flex flex-col">
+                        <Text className={labelClasses}>
+                            Display Name{' '}
+                            <Text className="text-gray-400 font-normal text-sm">(optional)</Text>
+                        </Text>
+                        <TextInput
+                            className={inputClasses}
+                            placeholder="How should we call you?"
+                            placeholderTextColor={isDarkMode ? '#555A64' : '#9E9E9E'}
+                            value={displayName}
+                            onChangeText={setDisplayName}
                         />
                         <View className={underlineClasses} />
                     </View>
@@ -126,7 +202,7 @@ export default function SignupScreen() {
                             />
                             <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
                                 <Ionicons
-                                    name={showPassword ? "eye-off-outline" : "eye-outline"}
+                                    name={showPassword ? 'eye-off-outline' : 'eye-outline'}
                                     size={20}
                                     color={isDarkMode ? '#858E92' : '#9E9E9E'}
                                 />
@@ -158,7 +234,9 @@ export default function SignupScreen() {
                     <Button
                         title="Sign up"
                         type="primary"
-                        onPress={() => router.push('/(tabs)')}
+                        onPress={handleRegister}
+                        loading={isLoading}
+                        disabled={isLoading}
                         className="w-full mb-6"
                     />
 
@@ -170,6 +248,15 @@ export default function SignupScreen() {
                     </View>
                 </ScrollView>
             </View>
+
+            <CustomAlert
+                visible={alertConfig.visible}
+                type={alertConfig.type}
+                title={alertConfig.title}
+                message={alertConfig.message}
+                onClose={() => setAlertConfig({ ...alertConfig, visible: false })}
+            />
         </SafeAreaView>
     );
 }
+
