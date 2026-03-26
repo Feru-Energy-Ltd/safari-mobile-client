@@ -51,7 +51,6 @@ export default function PersonalInfoScreen() {
                 setForm(profileData);
                 setTempForm(profileData);
             } catch (error) {
-                console.error('Failed to fetch profile:', error);
                 Toast.show({
                     type: 'error',
                     text1: 'Error',
@@ -108,7 +107,6 @@ export default function PersonalInfoScreen() {
                 position: 'top',
             });
         } catch (error: any) {
-            console.error('Failed to update profile:', error);
             Toast.show({
                 type: 'error',
                 text1: 'Update Failed',

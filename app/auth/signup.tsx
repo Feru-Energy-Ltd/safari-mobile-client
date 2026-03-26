@@ -93,7 +93,7 @@ export default function SignupScreen() {
                 phone: `+${callingCode}${phone}`,
                 displayName: displayName || fullName.trim(),
             });
-            router.push('/(tabs)');
+            router.push('/auth/login');
         } catch (error: any) {
             showAlert('error', 'Registration Failed', error?.message ?? 'Could not reach the server.');
         } finally {
