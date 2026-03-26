@@ -40,13 +40,13 @@ export default function WelcomeScreen() {
                         <Button
                             title="Sign up"
                             type="primary"
-                            onPress={() => router.push('/signup')}
+                            onPress={() => router.push('/auth/signup')}
                             className="w-full mb-4"
                         />
                         <Button
                             title="Log in"
                             type="secondary"
-                            onPress={() => router.push('/login')}
+                            onPress={() => router.push('/auth/login')}
                             className="w-full"
                         />
                     </View>
@@ -57,7 +57,7 @@ export default function WelcomeScreen() {
                             By continuing you accept our{'\n'}
                             <Text
                                 className="text-[#01B764] font-semibold"
-                                onPress={() => router.push('/terms')}
+                                onPress={() => router.push('/account/terms')}
                             >
                                 Terms & Privacy Policy
                             </Text>.

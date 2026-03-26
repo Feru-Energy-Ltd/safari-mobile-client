@@ -1,9 +1,11 @@
 import { Button } from '@/components/Button';
+import { getProfile } from '@/services/auth.service';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useColorScheme } from 'nativewind';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
+    ActivityIndicator,
     Platform,
     SafeAreaView,
     ScrollView,
@@ -22,18 +24,44 @@ export default function PersonalInfoScreen() {
     const isDarkMode = colorScheme === 'dark';
 
     const [isEditing, setIsEditing] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
 
     const [form, setForm] = useState({
-        fullName: 'Andrew Ainsley',
-        phoneNumber: '+1 111 467 378 399',
-        email: 'andrew.ainsley@yourdomain.com',
-        gender: 'Male',
-        dob: '12/27/1995',
-        address: '3517 W. Gray Street, New York',
-        country: 'United States'
+        firstName: '',
+        lastName: '',
+        displayName: '',
+        email: '',
+        phoneNumber: '',
     });
 
     const [tempForm, setTempForm] = useState({ ...form });
+
+    useEffect(() => {
+        const fetchProfile = async () => {
+            try {
+                const data = await getProfile();
+                const profileData = {
+                    firstName: data.firstName || '',
+                    lastName: data.lastName || '',
+                    displayName: data.displayName || '',
+                    email: data.email || '',
+                    phoneNumber: data.phone || '',
+                };
+                setForm(profileData);
+                setTempForm(profileData);
+            } catch (error) {
+                console.error('Failed to fetch profile:', error);
+                Toast.show({
+                    type: 'error',
+                    text1: 'Error',
+                    text2: 'Could not fetch profile information.',
+                });
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchProfile();
+    }, []);
 
     const bgColor = isDarkMode ? '#1C1F26' : '#FFFFFF';
     const textColor = isDarkMode ? '#FFFFFF' : '#1C1F26';
@@ -50,6 +78,8 @@ export default function PersonalInfoScreen() {
     };
 
     const handleSave = () => {
+        // Note: For now, we're just updating the local state.
+        // A real implementation would call an updateProfile API here.
         setForm({ ...tempForm });
         setIsEditing(false);
         Toast.show({
@@ -60,12 +90,12 @@ export default function PersonalInfoScreen() {
         });
     };
 
-    const renderInput = (label: string, value: string, key: keyof typeof tempForm, icon?: keyof typeof Ionicons.glyphMap) => (
+    const renderInput = (label: string, value: string, key: keyof typeof form, icon?: keyof typeof Ionicons.glyphMap) => (
         <View className="mb-6">
             <Text style={{ color: textColor, fontSize: 16, fontWeight: '600', marginBottom: 8 }}>{label}</Text>
             <View
                 className="flex-row items-center border-b pb-2"
-                style={{ borderBottomColor: isEditing ? PRIMARY_GREEN : (isDarkMode ? '#35383F' : '#F3F4F6') }}
+                style={{ borderBottomColor: PRIMARY_GREEN }}
             >
                 <TextInput
                     style={{
@@ -79,9 +109,10 @@ export default function PersonalInfoScreen() {
                     onChangeText={(text) => setTempForm(prev => ({ ...prev, [key]: text }))}
                     editable={isEditing}
                     placeholderTextColor={secondaryTextColor}
+                    keyboardType={key === 'email' ? 'email-address' : key === 'phoneNumber' ? 'phone-pad' : 'default'}
+                    autoCapitalize={key === 'email' ? 'none' : 'words'}
                 />
                 {icon && <Ionicons name={icon} size={20} color={isEditing ? PRIMARY_GREEN : secondaryTextColor} />}
-                {label === 'Gender' && <Ionicons name="chevron-down" size={20} color={isEditing ? PRIMARY_GREEN : secondaryTextColor} />}
             </View>
         </View>
     );
@@ -117,10 +148,14 @@ export default function PersonalInfoScreen() {
                             position: 'relative'
                         }}
                     >
-                        <Text style={{ fontSize: 40, fontWeight: 'bold', color: PRIMARY_GREEN }}>
-                            {form.fullName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
-                        </Text>
-                        {isEditing && (
+                        {isLoading ? (
+                            <ActivityIndicator size="large" color={PRIMARY_GREEN} />
+                        ) : (
+                            <Text style={{ fontSize: 40, fontWeight: 'bold', color: PRIMARY_GREEN }}>
+                                {form.displayName ? form.displayName.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase() : '??'}
+                            </Text>
+                        )}
+                        {isEditing && !isLoading && (
                             <TouchableOpacity
                                 style={{
                                     position: 'absolute',
@@ -141,13 +176,20 @@ export default function PersonalInfoScreen() {
 
                 {/* Form Section */}
                 <View className="px-5">
-                    {renderInput('Full Name', isEditing ? tempForm.fullName : form.fullName, 'fullName')}
-                    {renderInput('Phone Number', isEditing ? tempForm.phoneNumber : form.phoneNumber, 'phoneNumber')}
-                    {renderInput('Email', isEditing ? tempForm.email : form.email, 'email')}
-                    {renderInput('Gender', isEditing ? tempForm.gender : form.gender, 'gender')}
-                    {renderInput('Date of Birth', isEditing ? tempForm.dob : form.dob, 'dob', 'calendar')}
-                    {renderInput('Street Address', isEditing ? tempForm.address : form.address, 'address')}
-                    {renderInput('Country', isEditing ? tempForm.country : form.country, 'country')}
+                    {isLoading ? (
+                        <View className="py-10 items-center">
+                            <ActivityIndicator size="small" color={PRIMARY_GREEN} />
+                            <Text className="mt-4 text-gray-500">Loading your profile...</Text>
+                        </View>
+                    ) : (
+                        <>
+                            {renderInput('First Name', isEditing ? tempForm.firstName : form.firstName, 'firstName')}
+                            {renderInput('Last Name', isEditing ? tempForm.lastName : form.lastName, 'lastName')}
+                            {renderInput('Display Name', isEditing ? tempForm.displayName : form.displayName, 'displayName')}
+                            {renderInput('Phone Number', isEditing ? tempForm.phoneNumber : form.phoneNumber, 'phoneNumber')}
+                            {renderInput('Email', isEditing ? tempForm.email : form.email, 'email')}
+                        </>
+                    )}
                 </View>
             </ScrollView>
 

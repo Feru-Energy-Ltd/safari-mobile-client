@@ -21,6 +21,20 @@ export default function SignupScreen() {
     const [showPassword, setShowPassword] = useState(false);
     const [isAgreed, setIsAgreed] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [emailError, setEmailError] = useState('');
+
+    const validateEmail = (text: string) => {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!text) {
+            setEmailError('Email is required');
+            return false;
+        } else if (!emailRegex.test(text)) {
+            setEmailError('Please enter a valid email address');
+            return false;
+        }
+        setEmailError('');
+        return true;
+    };
 
     // Alert State
     const [alertConfig, setAlertConfig] = useState<{
@@ -54,6 +68,10 @@ export default function SignupScreen() {
             showAlert('warning', 'Validation', 'Please fill in all required fields.');
             return;
         }
+        if (emailError || !validateEmail(email)) {
+            showAlert('warning', 'Validation', 'Please fix the errors before submitting.');
+            return;
+        }
         if (!isAgreed) {
             showAlert('warning', 'Terms', 'Please agree to the Terms & Privacy Policy to continue.');
             return;
@@ -75,10 +93,8 @@ export default function SignupScreen() {
                 phone: `+${callingCode}${phone}`,
                 displayName: displayName || fullName.trim(),
             });
-            console.log('Register success:', data);
             router.push('/(tabs)');
         } catch (error: any) {
-            // console.error('Register error:', error);
             showAlert('error', 'Registration Failed', error?.message ?? 'Could not reach the server.');
         } finally {
             setIsLoading(false);
@@ -145,11 +161,18 @@ export default function SignupScreen() {
                             placeholder="Enter your email"
                             placeholderTextColor={isDarkMode ? '#555A64' : '#9E9E9E'}
                             value={email}
-                            onChangeText={setEmail}
+                            onChangeText={(text) => {
+                                setEmail(text);
+                                if (emailError) validateEmail(text);
+                            }}
+                            onBlur={() => validateEmail(email)}
                             keyboardType="email-address"
                             autoCapitalize="none"
                         />
-                        <View className={underlineClasses} />
+                        <View className={`h-[1.5px] ${emailError ? 'bg-red-500' : 'bg-[#01B764]'} ${emailError ? 'mb-2' : 'mb-6'}`} />
+                        {emailError ? (
+                            <Text className="text-red-500 text-[12px] mb-4 mt-[-4px] ml-1">{emailError}</Text>
+                        ) : null}
                     </View>
 
                     {/* Phone Number */}
@@ -223,7 +246,7 @@ export default function SignupScreen() {
                             I agree to SafariCharger{' '}
                             <Text
                                 className="text-[#01B764] font-semibold"
-                                onPress={() => router.push('/terms')}
+                                onPress={() => router.push('/account/terms')}
                             >
                                 Terms & Privacy Policy
                             </Text>.
@@ -242,7 +265,7 @@ export default function SignupScreen() {
 
                     <View className="flex-row justify-center mt-2">
                         <Text className="text-gray-500 dark:text-gray-400">Already have an account? </Text>
-                        <TouchableOpacity onPress={() => router.push('/login')}>
+                        <TouchableOpacity onPress={() => router.push('/auth/login')}>
                             <Text className="text-[#01B764] font-semibold">Log in</Text>
                         </TouchableOpacity>
                     </View>

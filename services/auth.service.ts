@@ -6,9 +6,11 @@ const BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 
 export const AUTH_KEYS = {
     IDENTITY_TOKEN: 'auth.identityToken',
+    ACCESS_TOKEN: 'auth.accessToken',
     REFRESH_TOKEN: 'auth.refreshToken',
     IDENTITY_TYPE: 'auth.identityType',
     ACCOUNTS: 'auth.accounts',
+    ACCOUNT: 'auth.account',
 } as const;
 
 // ---------- Types ----------
@@ -35,12 +37,28 @@ export interface Account {
 }
 
 export interface AuthResponse {
-    accounts?: Account[];
-    autoSelect?: boolean;
-    identityToken?: string;
-    refreshToken?: string;
     identityType?: string;
+    identityToken?: string;
+    autoSelect?: boolean;
+    accounts?: Account[];
+    accessToken?: string;
+    refreshToken?: string;
+    tokenType?: string;
+    expiresIn?: number;
+    account?: Account;
     message?: string;
+}
+
+export interface UserProfile {
+    id: number;
+    userId: number;
+    email: string;
+    displayName: string;
+    firstName: string;
+    lastName: string;
+    phone: string;
+    enabled: boolean;
+    createdAt: string;
 }
 
 
@@ -52,14 +70,20 @@ async function saveTokens(data: AuthResponse) {
     if (data.identityToken) {
         entries.push([AUTH_KEYS.IDENTITY_TOKEN, data.identityToken]);
     }
+    if (data.accessToken) {
+        entries.push([AUTH_KEYS.ACCESS_TOKEN, data.accessToken]);
+    }
+    if (data.refreshToken) {
+        entries.push([AUTH_KEYS.REFRESH_TOKEN, data.refreshToken]);
+    }
     if (data.identityType) {
         entries.push([AUTH_KEYS.IDENTITY_TYPE, data.identityType]);
     }
     if (data.accounts) {
         entries.push([AUTH_KEYS.ACCOUNTS, JSON.stringify(data.accounts)]);
     }
-    if (data.refreshToken) {
-        entries.push([AUTH_KEYS.REFRESH_TOKEN, data.refreshToken]);
+    if (data.account) {
+        entries.push([AUTH_KEYS.ACCOUNT, JSON.stringify(data.account)]);
     }
 
     if (entries.length > 0) {
@@ -70,6 +94,10 @@ async function saveTokens(data: AuthResponse) {
 
 export async function clearTokens() {
     await AsyncStorage.multiRemove(Object.values(AUTH_KEYS));
+}
+
+export async function getAccessToken(): Promise<string | null> {
+    return AsyncStorage.getItem(AUTH_KEYS.ACCESS_TOKEN);
 }
 
 export async function getIdentityToken(): Promise<string | null> {
@@ -83,6 +111,16 @@ export async function getRefreshToken(): Promise<string | null> {
 export async function getAccounts(): Promise<Account[]> {
     const raw = await AsyncStorage.getItem(AUTH_KEYS.ACCOUNTS);
     return raw ? JSON.parse(raw) : [];
+}
+
+export async function getCurrentAccount(): Promise<Account | null> {
+    const raw = await AsyncStorage.getItem(AUTH_KEYS.ACCOUNT);
+    return raw ? JSON.parse(raw) : null;
+}
+
+export async function isAuthenticated(): Promise<boolean> {
+    const token = await getAccessToken();
+    return !!token;
 }
 
 // ---------- Helpers ----------
@@ -147,6 +185,17 @@ export async function login(payload: LoginRequest): Promise<AuthResponse> {
     return data;
 }
 
+export async function selectContext(payload: { identityToken: string; contextId: number }): Promise<AuthResponse> {
+    const response = await fetch(`${BASE_URL}/auth/api/auth/select-context`, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify(payload),
+    });
+    const data = await handleResponse<AuthResponse>(response);
+    await saveTokens(data);
+    return data;
+}
+
 export async function register(payload: RegisterRequest): Promise<AuthResponse> {
     const response = await fetch(`${BASE_URL}/auth/api/auth/register`, {
         method: 'POST',
@@ -170,17 +219,34 @@ export async function refreshToken(token: string): Promise<AuthResponse> {
 }
 
 export async function logout(): Promise<void> {
-    const token = await getRefreshToken();
-    if (token) {
+    const refreshTkn = await getRefreshToken();
+    const accessTkn = await getAccessToken();
+
+    if (refreshTkn) {
         try {
             await fetch(`${BASE_URL}/auth/api/auth/logout`, {
                 method: 'POST',
-                headers: authHeaders(),
-                body: JSON.stringify({ refreshToken: token }),
+                headers: {
+                    ...authHeaders(),
+                    ...(accessTkn ? { 'Authorization': `Bearer ${accessTkn}` } : {})
+                },
+                body: JSON.stringify({ refreshToken: refreshTkn }),
             });
-        } catch {
-            // Best-effort: always clear local tokens even if the request fails
+        } catch (e) {
+            console.error('Logout request failed', e);
         }
     }
     await clearTokens();
+}
+
+export async function getProfile(): Promise<UserProfile> {
+    const accessTkn = await getAccessToken();
+    const response = await fetch(`${BASE_URL}/auth/api/profile`, {
+        method: 'GET',
+        headers: {
+            ...authHeaders(),
+            ...(accessTkn ? { 'Authorization': `Bearer ${accessTkn}` } : {})
+        },
+    });
+    return handleResponse<UserProfile>(response);
 }

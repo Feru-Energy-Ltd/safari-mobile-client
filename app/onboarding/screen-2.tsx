@@ -47,14 +47,14 @@ export default function OnboardingScreen3() {
                         <Button
                             title="Skip"
                             type="secondary"
-                            onPress={() => router.replace('/welcome')}
+                            onPress={() => router.replace('/auth/welcome')}
                             className="flex-1"
                         />
                         <View className="w-4" />
                         <Button
                             title="Next"
                             type="primary"
-                            onPress={() => router.push('/welcome')}
+                            onPress={() => router.push('/auth/welcome')}
                             className="flex-1"
                         />
                     </View>

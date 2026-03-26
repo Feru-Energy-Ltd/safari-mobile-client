@@ -1,10 +1,11 @@
 import { AlertType, CustomAlert } from '@/components/CustomAlert';
-import { logout } from '@/services/auth.service';
+import { getProfile, logout, UserProfile } from '@/services/auth.service';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useColorScheme } from 'nativewind';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
+    ActivityIndicator,
     SafeAreaView,
     ScrollView,
     StyleSheet,
@@ -90,6 +91,36 @@ export default function AccountScreen() {
     const { colorScheme, setColorScheme } = useColorScheme();
     const router = useRouter();
     const isDarkMode = colorScheme === 'dark';
+    const [profile, setProfile] = useState<UserProfile | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchProfile = async () => {
+            try {
+                const data = await getProfile();
+                setProfile(data);
+            } catch (error) {
+                console.error('Failed to fetch profile:', error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchProfile();
+    }, []);
+
+    const getInitials = (name: string) => {
+        if (!name) return '??';
+        const parts = name.split(' ');
+        if (parts.length >= 2) {
+            return (parts[0][0] + (parts[1][0] || '')).toUpperCase();
+        }
+        return name.slice(0, 2).toUpperCase();
+    };
+
+    // Improved initials logic
+    const initials = profile?.displayName ?
+        profile.displayName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() :
+        '??';
 
     const toggleDarkMode = () => {
         setColorScheme(isDarkMode ? 'light' : 'dark');
@@ -150,16 +181,29 @@ export default function AccountScreen() {
                     <TouchableOpacity
                         style={styles.profileRow}
                         activeOpacity={0.7}
-                        onPress={() => router.push('/personal-info')}
+                        onPress={() => router.push('/account/personal-info')}
                     >
                         <View style={[styles.avatarContainer, { backgroundColor: isDarkMode ? '#2A2D35' : '#F5F5F5' }]}>
-                            <Text style={styles.avatarInitials}>AA</Text>
+                            {isLoading ? (
+                                <ActivityIndicator size="small" color="#01B764" />
+                            ) : (
+                                <Text style={styles.avatarInitials}>{initials}</Text>
+                            )}
                         </View>
                         <View style={styles.profileInfo}>
-                            <Text style={[styles.profileName, { color: isDarkMode ? '#FFFFFF' : '#1C1F26' }]}>
-                                Andrew Ainsley
-                            </Text>
-                            <Text style={styles.profilePhone}>+1 111 467 378 399</Text>
+                            {isLoading ? (
+                                <View style={{ gap: 8 }}>
+                                    <View style={{ height: 20, width: 120, backgroundColor: isDarkMode ? '#2A2D35' : '#F5F5F5', borderRadius: 4 }} />
+                                    <View style={{ height: 14, width: 150, backgroundColor: isDarkMode ? '#2A2D35' : '#F5F5F5', borderRadius: 4 }} />
+                                </View>
+                            ) : (
+                                <>
+                                    <Text style={[styles.profileName, { color: isDarkMode ? '#FFFFFF' : '#1C1F26' }]}>
+                                        {profile?.displayName || 'User'}
+                                    </Text>
+                                    <Text style={styles.profilePhone}>{profile?.phone || profile?.email}</Text>
+                                </>
+                            )}
                         </View>
                         <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
                     </TouchableOpacity>
@@ -181,7 +225,7 @@ export default function AccountScreen() {
                     <SettingsItem
                         icon="person-outline"
                         title="Personal Info"
-                        onPress={() => router.push('/personal-info')}
+                        onPress={() => router.push('/account/personal-info')}
                     />
                     <View style={[styles.inlineDivider, { backgroundColor: dividerColor }]} />
                     <SettingsItem icon="shield-checkmark-outline" title="Security" />
@@ -211,10 +255,13 @@ export default function AccountScreen() {
                     <SettingsItem
                         icon="help-circle-outline"
                         title="Help Center"
-                        onPress={() => router.push('/help-center')}
+                        onPress={() => router.push('/account/help-center')}
                     />
                     <View style={[styles.inlineDivider, { backgroundColor: dividerColor }]} />
-                    <SettingsItem icon="lock-closed-outline" title="Privacy Policy" />
+                    <SettingsItem
+                        icon="lock-closed-outline"
+                        title="Privacy Policy"
+                        onPress={() => router.push('/account/terms')} />
                     <View style={[styles.inlineDivider, { backgroundColor: dividerColor }]} />
                     <SettingsItem icon="information-circle-outline" title="About SafariCharger" />
                 </View>
@@ -235,7 +282,7 @@ export default function AccountScreen() {
                                 'Are you sure you want to logout of your account?',
                                 async () => {
                                     await logout();
-                                    router.replace('/login');
+                                    router.replace('/auth/login');
                                 }
                             );
                         }}
