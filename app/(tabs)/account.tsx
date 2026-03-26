@@ -147,7 +147,11 @@ export default function AccountScreen() {
             >
                 {/* Profile Row */}
                 <View style={styles.profileSection}>
-                    <TouchableOpacity style={styles.profileRow} activeOpacity={0.7}>
+                    <TouchableOpacity
+                        style={styles.profileRow}
+                        activeOpacity={0.7}
+                        onPress={() => router.push('/personal-info')}
+                    >
                         <View style={[styles.avatarContainer, { backgroundColor: isDarkMode ? '#2A2D35' : '#F5F5F5' }]}>
                             <Text style={styles.avatarInitials}>AA</Text>
                         </View>
@@ -174,7 +178,11 @@ export default function AccountScreen() {
 
                 {/* Section 2 */}
                 <View style={styles.section}>
-                    <SettingsItem icon="person-outline" title="Personal Info" />
+                    <SettingsItem
+                        icon="person-outline"
+                        title="Personal Info"
+                        onPress={() => router.push('/personal-info')}
+                    />
                     <View style={[styles.inlineDivider, { backgroundColor: dividerColor }]} />
                     <SettingsItem icon="shield-checkmark-outline" title="Security" />
                     <View style={[styles.inlineDivider, { backgroundColor: dividerColor }]} />
@@ -200,7 +208,11 @@ export default function AccountScreen() {
 
                 {/* Section 3 */}
                 <View style={styles.section}>
-                    <SettingsItem icon="help-circle-outline" title="Help Center" />
+                    <SettingsItem
+                        icon="help-circle-outline"
+                        title="Help Center"
+                        onPress={() => router.push('/help-center')}
+                    />
                     <View style={[styles.inlineDivider, { backgroundColor: dividerColor }]} />
                     <SettingsItem icon="lock-closed-outline" title="Privacy Policy" />
                     <View style={[styles.inlineDivider, { backgroundColor: dividerColor }]} />
