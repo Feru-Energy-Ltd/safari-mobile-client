@@ -250,3 +250,15 @@ export async function getProfile(): Promise<UserProfile> {
     });
     return handleResponse<UserProfile>(response);
 }
+export async function updateProfile(payload: Partial<UserProfile>): Promise<UserProfile> {
+    const accessTkn = await getAccessToken();
+    const response = await fetch(`${BASE_URL}/auth/api/profile`, {
+        method: 'PUT',
+        headers: {
+            ...authHeaders(),
+            ...(accessTkn ? { 'Authorization': `Bearer ${accessTkn}` } : {})
+        },
+        body: JSON.stringify(payload),
+    });
+    return handleResponse<UserProfile>(response);
+}

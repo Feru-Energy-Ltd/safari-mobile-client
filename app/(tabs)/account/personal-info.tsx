@@ -1,5 +1,5 @@
 import { Button } from '@/components/Button';
-import { getProfile } from '@/services/auth.service';
+import { getProfile, updateProfile } from '@/services/auth.service';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useColorScheme } from 'nativewind';
@@ -25,6 +25,7 @@ export default function PersonalInfoScreen() {
 
     const [isEditing, setIsEditing] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+    const [isSaving, setIsSaving] = useState(false);
 
     const [form, setForm] = useState({
         firstName: '',
@@ -77,45 +78,83 @@ export default function PersonalInfoScreen() {
         setTempForm({ ...form });
     };
 
-    const handleSave = () => {
-        // Note: For now, we're just updating the local state.
-        // A real implementation would call an updateProfile API here.
-        setForm({ ...tempForm });
-        setIsEditing(false);
-        Toast.show({
-            type: 'success',
-            text1: 'Success',
-            text2: 'Personal information updated successfully!',
-            position: 'top',
-        });
+    const handleSave = async () => {
+        setIsSaving(true);
+        try {
+            const payload = {
+                firstName: tempForm.firstName,
+                lastName: tempForm.lastName,
+                phone: tempForm.phoneNumber,
+                displayName: tempForm.displayName,
+            };
+
+            const updatedProfile = await updateProfile(payload);
+
+            const profileData = {
+                firstName: updatedProfile.firstName || '',
+                lastName: updatedProfile.lastName || '',
+                displayName: updatedProfile.displayName || '',
+                email: updatedProfile.email || '',
+                phoneNumber: updatedProfile.phone || '',
+            };
+
+            setForm(profileData);
+            setIsEditing(false);
+
+            Toast.show({
+                type: 'success',
+                text1: 'Success',
+                text2: 'Personal information updated successfully!',
+                position: 'top',
+            });
+        } catch (error: any) {
+            console.error('Failed to update profile:', error);
+            Toast.show({
+                type: 'error',
+                text1: 'Update Failed',
+                text2: error?.message || 'Something went wrong. Please try again.',
+            });
+        } finally {
+            setIsSaving(false);
+        }
     };
 
-    const renderInput = (label: string, value: string, key: keyof typeof form, icon?: keyof typeof Ionicons.glyphMap) => (
-        <View className="mb-6">
-            <Text style={{ color: textColor, fontSize: 16, fontWeight: '600', marginBottom: 8 }}>{label}</Text>
-            <View
-                className="flex-row items-center border-b pb-2"
-                style={{ borderBottomColor: PRIMARY_GREEN }}
-            >
-                <TextInput
-                    style={{
-                        flex: 1,
-                        color: textColor,
-                        fontSize: 16,
-                        fontWeight: '500',
-                        paddingVertical: Platform.OS === 'ios' ? 4 : 0
-                    }}
-                    value={isEditing ? tempForm[key] : form[key]}
-                    onChangeText={(text) => setTempForm(prev => ({ ...prev, [key]: text }))}
-                    editable={isEditing}
-                    placeholderTextColor={secondaryTextColor}
-                    keyboardType={key === 'email' ? 'email-address' : key === 'phoneNumber' ? 'phone-pad' : 'default'}
-                    autoCapitalize={key === 'email' ? 'none' : 'words'}
-                />
-                {icon && <Ionicons name={icon} size={20} color={isEditing ? PRIMARY_GREEN : secondaryTextColor} />}
+    const renderInput = (label: string, value: string, key: keyof typeof form, icon?: keyof typeof Ionicons.glyphMap) => {
+        const isEmailField = key === 'email';
+        const isFieldEditable = isEditing && !isEmailField;
+
+        return (
+            <View className="mb-6">
+                <Text style={{ color: textColor, fontSize: 16, fontWeight: '600', marginBottom: 8 }}>{label}</Text>
+                <View
+                    className="flex-row items-center border-b pb-2"
+                    style={{ borderBottomColor: isFieldEditable ? PRIMARY_GREEN : (isDarkMode ? '#2A2D35' : '#E5E7EB') }}
+                >
+                    <TextInput
+                        style={{
+                            flex: 1,
+                            color: isFieldEditable ? textColor : secondaryTextColor,
+                            fontSize: 16,
+                            fontWeight: '500',
+                            paddingVertical: Platform.OS === 'ios' ? 4 : 0
+                        }}
+                        value={isEditing ? tempForm[key] : form[key]}
+                        onChangeText={(text) => setTempForm(prev => ({ ...prev, [key]: text }))}
+                        editable={isFieldEditable}
+                        placeholderTextColor={secondaryTextColor}
+                        keyboardType={key === 'email' ? 'email-address' : key === 'phoneNumber' ? 'phone-pad' : 'default'}
+                        autoCapitalize={key === 'email' ? 'none' : 'words'}
+                    />
+                    {isEmailField && (
+                        <Ionicons name="lock-closed-outline" size={16} color={secondaryTextColor} />
+                    )}
+                    {icon && !isEmailField && (
+                        <Ionicons name={icon} size={20} color={isFieldEditable ? PRIMARY_GREEN : secondaryTextColor} />
+                    )}
+                </View>
             </View>
-        </View>
-    );
+        );
+    };
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: bgColor }}>
@@ -187,7 +226,7 @@ export default function PersonalInfoScreen() {
                             {renderInput('Last Name', isEditing ? tempForm.lastName : form.lastName, 'lastName')}
                             {renderInput('Display Name', isEditing ? tempForm.displayName : form.displayName, 'displayName')}
                             {renderInput('Phone Number', isEditing ? tempForm.phoneNumber : form.phoneNumber, 'phoneNumber')}
-                            {renderInput('Email', isEditing ? tempForm.email : form.email, 'email')}
+                            {renderInput('Email Address', isEditing ? tempForm.email : form.email, 'email')}
                         </>
                     )}
                 </View>
@@ -203,12 +242,15 @@ export default function PersonalInfoScreen() {
                         title="Cancel"
                         type="secondary"
                         onPress={handleCancel}
+                        disabled={isSaving}
                         className="flex-1"
                     />
                     <Button
                         title="Save Changes"
                         type="primary"
                         onPress={handleSave}
+                        loading={isSaving}
+                        disabled={isSaving}
                         className="flex-1"
                     />
                 </View>
