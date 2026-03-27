@@ -262,3 +262,15 @@ export async function updateProfile(payload: Partial<UserProfile>): Promise<User
     });
     return handleResponse<UserProfile>(response);
 }
+
+export async function getVehicles(): Promise<any> {
+    const accessTkn = await getAccessToken();
+    const response = await fetch(`${BASE_URL}/csms/app/vehicles`, {
+        method: 'GET',
+        headers: {
+            ...authHeaders(),
+            ...(accessTkn ? { 'Authorization': `Bearer ${accessTkn}` } : {})
+        },
+    });
+    return handleResponse<any>(response);
+}

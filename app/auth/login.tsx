@@ -1,7 +1,7 @@
 import { Button } from '@/components/Button';
 import { AlertType, CustomAlert } from '@/components/CustomAlert';
 import { useColorScheme } from '@/components/useColorScheme';
-import { login, selectContext } from '@/services/auth.service';
+import { getVehicles, login, selectContext } from '@/services/auth.service';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
@@ -51,6 +51,24 @@ export default function LoginScreen() {
                 });
             }
 
+            // Phase 3: Vehicle Check
+            let hasVehicles = false;
+            try {
+                const vehicleRes = await getVehicles();
+                if (vehicleRes && vehicleRes.data && vehicleRes.data.length > 0) {
+                    hasVehicles = true;
+                }
+            } catch (vError: any) {
+                // If the error message indicates no vehicles, we want to show the add-vehicle screen
+                if (vError?.message?.toLowerCase().includes('no vehicles found')) {
+                    hasVehicles = false;
+                } else {
+                    console.error('Vehicle check failed:', vError);
+                    // For other errors, fallback to tabs to avoid blocking the user
+                    hasVehicles = true;
+                }
+            }
+
             Toast.show({
                 type: 'success',
                 text1: 'Login Successful',
@@ -61,7 +79,11 @@ export default function LoginScreen() {
                 topOffset: 60,
             });
 
-            router.replace('/(tabs)');
+            if (hasVehicles) {
+                router.replace('/(tabs)');
+            } else {
+                router.replace('/auth/add-vehicle');
+            }
         } catch (error: any) {
             // console.error('Login error:', error);
             showAlert('error', 'Login Failed', error?.message ?? 'Could not reach the server.');
