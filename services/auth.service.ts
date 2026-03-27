@@ -274,3 +274,16 @@ export async function getVehicles(): Promise<any> {
     });
     return handleResponse<any>(response);
 }
+
+export async function changePassword(payload: { oldPassword: string; newPassword: string }): Promise<any> {
+    const accessTkn = await getAccessToken();
+    const response = await fetch(`${BASE_URL}/auth/api/profile/change-password`, {
+        method: 'POST',
+        headers: {
+            ...authHeaders(),
+            ...(accessTkn ? { 'Authorization': `Bearer ${accessTkn}` } : {})
+        },
+        body: JSON.stringify(payload),
+    });
+    return handleResponse<any>(response);
+}

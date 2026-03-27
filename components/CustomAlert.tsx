@@ -10,7 +10,6 @@ import {
     View,
 } from 'react-native';
 import { Button } from './Button';
-
 import { useColorScheme } from './useColorScheme';
 
 export type AlertType = 'success' | 'error' | 'warning' | 'confirm';
@@ -82,7 +81,6 @@ export const CustomAlert = ({
 
     if (!shouldRender) return null;
 
-
     const getIcon = () => {
         switch (type) {
             case 'success':
@@ -106,6 +104,7 @@ export const CustomAlert = ({
             visible={visible}
             animationType="none"
             onRequestClose={onClose}
+            statusBarTranslucent={true}
         >
             <View style={styles.overlay}>
                 <Pressable style={StyleSheet.absoluteFill} onPress={onClose}>
@@ -126,11 +125,9 @@ export const CustomAlert = ({
                         },
                     ]}
                 >
-                    {/* Drag Handle (Visual) */}
                     <View style={[styles.dragHandle, { backgroundColor: isDarkMode ? '#35383F' : '#E5E7EB' }]} />
 
                     <View style={styles.content}>
-                        {/* Icon Circle */}
                         <View style={[styles.iconWrapper, { backgroundColor: `${icon.color}15` }]}>
                             <Ionicons name={icon.name} size={40} color={icon.color} />
                         </View>
@@ -144,7 +141,7 @@ export const CustomAlert = ({
                         </Text>
 
                         <View style={styles.buttonContainer}>
-                            {onConfirm && (
+                            {type === 'confirm' && (
                                 <TouchableOpacity
                                     activeOpacity={0.7}
                                     onPress={onClose}
@@ -169,7 +166,7 @@ export const CustomAlert = ({
                                         onClose();
                                     }
                                 }}
-                                className={onConfirm ? "flex-1" : "w-full"}
+                                className={type === 'confirm' ? "flex-1" : "w-full"}
                             />
                         </View>
                     </View>

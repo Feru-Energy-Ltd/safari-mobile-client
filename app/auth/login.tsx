@@ -15,6 +15,20 @@ export default function LoginScreen() {
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [emailError, setEmailError] = useState('');
+
+    const validateEmail = (text: string) => {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!text) {
+            setEmailError('Email is required');
+            return false;
+        } else if (!emailRegex.test(text)) {
+            setEmailError('Please enter a valid email address');
+            return false;
+        }
+        setEmailError('');
+        return true;
+    };
 
     // Alert State
     const [alertConfig, setAlertConfig] = useState<{
@@ -36,6 +50,10 @@ export default function LoginScreen() {
     const handleLogin = async () => {
         if (!email || !password) {
             showAlert('warning', 'Validation', 'Please enter your email and password.');
+            return;
+        }
+        if (emailError || !validateEmail(email)) {
+            showAlert('warning', 'Validation', 'Please fix the errors before submitting.');
             return;
         }
         setIsLoading(true);
@@ -123,11 +141,18 @@ export default function LoginScreen() {
                             placeholder="Enter your email address"
                             placeholderTextColor={isDarkMode ? '#555A64' : '#9E9E9E'}
                             value={email}
-                            onChangeText={setEmail}
+                            onChangeText={(text) => {
+                                setEmail(text);
+                                if (emailError) validateEmail(text);
+                            }}
+                            onBlur={() => validateEmail(email)}
                             keyboardType="email-address"
                             autoCapitalize="none"
                         />
-                        <View className={underlineClasses} />
+                        <View className={`h-[1.5px] ${emailError ? 'bg-red-500' : 'bg-[#01B764]'} ${emailError ? 'mb-2' : 'mb-8'}`} />
+                        {emailError ? (
+                            <Text className="text-red-500 text-[12px] mb-4 mt-[-4px] ml-1">{emailError}</Text>
+                        ) : null}
                     </View>
 
                     {/* Password */}

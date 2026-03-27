@@ -228,7 +228,11 @@ export default function AccountScreen() {
                         onPress={() => router.push('/account/personal-info')}
                     />
                     <View style={[styles.inlineDivider, { backgroundColor: dividerColor }]} />
-                    <SettingsItem icon="shield-checkmark-outline" title="Security" />
+                    <SettingsItem
+                        icon="shield-checkmark-outline"
+                        title="Change Password"
+                        onPress={() => router.push('/account/change-password')}
+                    />
                     <View style={[styles.inlineDivider, { backgroundColor: dividerColor }]} />
                     <SettingsItem icon="language-outline" title="Language" value="English (US)" />
                     <View style={[styles.inlineDivider, { backgroundColor: dividerColor }]} />
