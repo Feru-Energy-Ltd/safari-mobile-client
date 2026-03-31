@@ -213,7 +213,7 @@ export default function AccountScreen() {
 
                 {/* Section 1 */}
                 <View style={styles.section}>
-                    <SettingsItem icon="car-outline" title="My Vehicle" />
+                    <SettingsItem icon="car-outline" title="My Vehicle" onPress={() => router.push('/account/my-vehicles')} />
                     <View style={[styles.inlineDivider, { backgroundColor: dividerColor }]} />
                     <SettingsItem icon="card-outline" title="Payment Methods" />
                 </View>
@@ -223,15 +223,9 @@ export default function AccountScreen() {
                 {/* Section 2 */}
                 <View style={styles.section}>
                     <SettingsItem
-                        icon="person-outline"
-                        title="Personal Info"
-                        onPress={() => router.push('/account/personal-info')}
-                    />
-                    <View style={[styles.inlineDivider, { backgroundColor: dividerColor }]} />
-                    <SettingsItem
                         icon="shield-checkmark-outline"
-                        title="Change Password"
-                        onPress={() => router.push('/account/change-password')}
+                        title="Profile & Security"
+                        onPress={() => router.push({ pathname: '/account/personal-info', params: { tab: 'profile' } })}
                     />
                     <View style={[styles.inlineDivider, { backgroundColor: dividerColor }]} />
                     <SettingsItem icon="language-outline" title="Language" value="English (US)" />

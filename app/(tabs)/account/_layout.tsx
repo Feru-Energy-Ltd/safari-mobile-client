@@ -8,7 +8,6 @@ export default function AccountLayout() {
             <Stack.Screen name="personal-info" />
             <Stack.Screen name="help-center" />
             <Stack.Screen name="terms" />
-            <Stack.Screen name="change-password" />
         </Stack>
     );
 }

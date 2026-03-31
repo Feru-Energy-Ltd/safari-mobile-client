@@ -1,7 +1,8 @@
 import { Button } from '@/components/Button';
 import { AlertType, CustomAlert } from '@/components/CustomAlert';
 import { useColorScheme } from '@/components/useColorScheme';
-import { getVehicles, login, selectContext } from '@/services/auth.service';
+import { login, selectContext } from '@/services/auth.service';
+import { getVehicles } from '@/services/vehicle.service';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
@@ -59,14 +60,29 @@ export default function LoginScreen() {
         setIsLoading(true);
         try {
             const data = await login({ email, password });
+            console.log("Login Response: ", data);
 
-            // Phase 2: Select Context (Auto-select first account if requested)
-            if (data.identityToken && data.accounts && data.accounts.length > 0) {
-                const contextId = data.accounts[0].accountId;
-                await selectContext({
-                    identityToken: data.identityToken,
-                    contextId
-                });
+            // Phase 2: Select Context
+            const accounts = data.accounts || [];
+            if (data.identityToken && accounts.length > 0) {
+                // If exactly one account and it's Personal, auto-select
+                if (accounts.length === 1 && accounts[0].accountType === 'PERSONAL') {
+                    const contextId = accounts[0].accountId;
+                    await selectContext({
+                        identityToken: data.identityToken,
+                        contextId
+                    });
+                } else {
+                    // Navigate to account selection screen
+                    router.replace({
+                        pathname: '/auth/select-account' as any,
+                        params: {
+                            identityToken: data.identityToken,
+                            accounts: JSON.stringify(accounts)
+                        }
+                    });
+                    return; // Stop execution here, vehicle check happens later
+                }
             }
 
             // Phase 3: Vehicle Check

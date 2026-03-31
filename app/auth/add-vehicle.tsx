@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import React from 'react';
-import { Dimensions, SafeAreaView, Text, TouchableOpacity, View } from 'react-native';
+import { Dimensions, Image, SafeAreaView, Text, TouchableOpacity, View } from 'react-native';
 import AddVehicleSvg from '../../assets/images/add-vehicle.svg';
 
 const { width } = Dimensions.get('window');
@@ -15,13 +15,19 @@ export default function AddVehicleScreen() {
             <View className="flex-1 px-3">
                 {/* Content Container */}
                 <View className="flex-1 items-center justify-center px-4">
-                    <Text className="text-[32px] font-semibold text-[#1C1F26] dark:text-white leading-[42px] mb-4 text-left self-start">
-                        Personalize your experience by adding a vehicle 🚗
-                    </Text>
-
-                    <Text className="text-[16px] text-gray-500 dark:text-gray-400 leading-[24px] mb-10 text-left self-start">
-                        Your vehicle is used to determine compatible charging stations and provide a better experience.
-                    </Text>
+                    {/* Header Logic */}
+                    <View className="items-center mb-6 mt-2">
+                        <Image
+                            source={require('../../assets/images/safaricharger.png')}
+                            style={{ width: 250, height: 150, resizeMode: 'contain', marginBottom: 24 }}
+                        />
+                        <Text style={{ fontSize: 26, fontWeight: '600', color: isDarkMode ? '#FFFFFF' : '#111827', textAlign: 'center', marginBottom: 12 }}>
+                            Personalize Your Experience
+                        </Text>
+                        <Text style={{ fontSize: 15, color: isDarkMode ? '#9CA3AF' : '#6B7280', textAlign: 'center', lineHeight: 22, paddingHorizontal: 12 }}>
+                            Add a vehicle to determine compatible charging stations and provide a better experience.
+                        </Text>
+                    </View>
 
                     {/* Illustration Container */}
                     <View
@@ -44,8 +50,7 @@ export default function AddVehicleScreen() {
 
                     <TouchableOpacity
                         onPress={() => {
-                            // Link to vehicle add process later
-                            router.replace('/(tabs)');
+                            router.push('/auth/create-vehicle');
                         }}
                         className="flex-1 h-[58px] rounded-[29px] bg-[#01B764] items-center justify-center shadow-lg shadow-green-500/30"
                         activeOpacity={0.8}
