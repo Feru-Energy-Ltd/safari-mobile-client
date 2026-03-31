@@ -97,3 +97,15 @@ export async function getVehicles(): Promise<{ status: boolean; data: Vehicle[];
     });
     return handleResponse<{ status: boolean; data: Vehicle[]; code: number; message: string }>(response);
 }
+
+export async function deleteVehicle(vehicleId: number): Promise<any> {
+    const accessTkn = await getAccessToken();
+    const response = await fetch(`${BASE_URL}/csms/app/vehicles/${vehicleId}`, {
+        method: 'DELETE',
+        headers: {
+            ...authHeaders(),
+            ...(accessTkn ? { 'Authorization': `Bearer ${accessTkn}` } : {})
+        },
+    });
+    return handleResponse<any>(response);
+}

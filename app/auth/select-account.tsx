@@ -10,7 +10,6 @@ import Toast from 'react-native-toast-message';
 
 export default function SelectAccountScreen() {
     const { identityToken, accounts } = useLocalSearchParams<{ identityToken: string; accounts: string }>();
-    console.log("Accounts: ", accounts);
     const colorScheme = useColorScheme();
     const isDarkMode = colorScheme === 'dark';
 

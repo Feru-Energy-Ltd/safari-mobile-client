@@ -60,7 +60,7 @@ export default function LoginScreen() {
         setIsLoading(true);
         try {
             const data = await login({ email, password });
-            console.log("Login Response: ", data);
+            // console.log("Login Response: ", data);
 
             // Phase 2: Select Context
             const accounts = data.accounts || [];
