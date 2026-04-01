@@ -6,7 +6,8 @@ import { getVehicles } from '@/services/vehicle.service';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
-import { SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 
 export default function LoginScreen() {
@@ -165,10 +166,12 @@ export default function LoginScreen() {
                             keyboardType="email-address"
                             autoCapitalize="none"
                         />
-                        <View className={`h-[1.5px] ${emailError ? 'bg-red-500' : 'bg-[#01B764]'} ${emailError ? 'mb-2' : 'mb-8'}`} />
-                        {emailError ? (
-                            <Text className="text-red-500 text-[12px] mb-4 mt-[-4px] ml-1">{emailError}</Text>
-                        ) : null}
+                        <View className={`h-[1.5px] ${emailError ? 'bg-red-500' : 'bg-[#01B764]'}`} />
+                        <View className="h-8 pt-1">
+                            {emailError ? (
+                                <Text className="text-red-500 text-[12px] ml-1">{emailError}</Text>
+                            ) : null}
+                        </View>
                     </View>
 
                     {/* Password */}

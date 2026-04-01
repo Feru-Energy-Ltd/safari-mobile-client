@@ -5,8 +5,9 @@ import { register } from '@/services/auth.service';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
-import { SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import CountryPicker, { Country, CountryCode, DARK_THEME, DEFAULT_THEME } from 'react-native-country-picker-modal';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 
 export default function SignupScreen() {
@@ -22,6 +23,21 @@ export default function SignupScreen() {
     const [isAgreed, setIsAgreed] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [emailError, setEmailError] = useState('');
+    const [phoneError, setPhoneError] = useState('');
+
+    const validatePhone = (text: string) => {
+        const phoneRegex = /^\d{7,15}$/;
+        const cleanPhone = text.replace(/[\s-]/g, '');
+        if (!cleanPhone) {
+            setPhoneError('Phone number is required');
+            return false;
+        } else if (!phoneRegex.test(cleanPhone)) {
+            setPhoneError('Please enter a valid phone number');
+            return false;
+        }
+        setPhoneError('');
+        return true;
+    };
 
     const validateEmail = (text: string) => {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -69,6 +85,10 @@ export default function SignupScreen() {
             return;
         }
         if (emailError || !validateEmail(email)) {
+            showAlert('warning', 'Validation', 'Please fix the errors before submitting.');
+            return;
+        }
+        if (phoneError || !validatePhone(phone)) {
             showAlert('warning', 'Validation', 'Please fix the errors before submitting.');
             return;
         }
@@ -169,10 +189,12 @@ export default function SignupScreen() {
                             keyboardType="email-address"
                             autoCapitalize="none"
                         />
-                        <View className={`h-[1.5px] ${emailError ? 'bg-red-500' : 'bg-[#01B764]'} ${emailError ? 'mb-2' : 'mb-6'}`} />
-                        {emailError ? (
-                            <Text className="text-red-500 text-[12px] mb-4 mt-[-4px] ml-1">{emailError}</Text>
-                        ) : null}
+                        <View className={`h-[1.5px] ${emailError ? 'bg-red-500' : 'bg-[#01B764]'}`} />
+                        <View className="h-6 pt-1">
+                            {emailError ? (
+                                <Text className="text-red-500 text-[12px] ml-1">{emailError}</Text>
+                            ) : null}
+                        </View>
                     </View>
 
                     {/* Phone Number */}
@@ -204,11 +226,20 @@ export default function SignupScreen() {
                                 placeholder="7 9 378 399"
                                 placeholderTextColor={isDarkMode ? '#555A64' : '#9E9E9E'}
                                 value={phone}
-                                onChangeText={setPhone}
+                                onChangeText={(text) => {
+                                    setPhone(text);
+                                    if (phoneError) validatePhone(text);
+                                }}
+                                onBlur={() => validatePhone(phone)}
                                 keyboardType="phone-pad"
                             />
                         </View>
-                        <View className={underlineClasses} />
+                        <View className={`h-[1.5px] ${phoneError ? 'bg-red-500' : 'bg-[#01B764]'}`} />
+                        <View className="h-6 pt-1">
+                            {phoneError ? (
+                                <Text className="text-red-500 text-[12px] ml-1">{phoneError}</Text>
+                            ) : null}
+                        </View>
                     </View>
 
                     {/* Password */}

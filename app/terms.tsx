@@ -3,12 +3,12 @@ import { useRouter } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import React from 'react';
 import {
-    SafeAreaView,
     ScrollView,
     Text,
     TouchableOpacity,
     View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const Section = ({ title, content }: { title: string; content: React.ReactNode }) => {
     const { colorScheme } = useColorScheme();

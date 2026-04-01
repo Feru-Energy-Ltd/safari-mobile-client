@@ -3,10 +3,13 @@ import { Tabs } from 'expo-router';
 import React from 'react';
 
 import { useColorScheme } from '@/components/useColorScheme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const isDarkMode = colorScheme === 'dark';
+  const insets = useSafeAreaInsets();
+  const bottomPadding = Math.max(insets.bottom, 10);
 
   return (
     <Tabs
@@ -16,8 +19,8 @@ export default function TabLayout() {
         tabBarStyle: {
           backgroundColor: isDarkMode ? '#1C1F26' : '#FFFFFF',
           borderTopColor: isDarkMode ? '#1C1F26' : '#F3F3F3',
-          height: 90,
-          paddingBottom: 30,
+          height: 60 + bottomPadding,
+          paddingBottom: bottomPadding,
           paddingTop: 10,
         },
         tabBarLabelStyle: {

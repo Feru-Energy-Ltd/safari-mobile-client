@@ -141,7 +141,7 @@ export const CustomAlert = ({
                         </Text>
 
                         <View style={styles.buttonContainer}>
-                            {type === 'confirm' && (
+                            {(type === 'confirm' || (type === 'warning' && !!onConfirm)) && (
                                 <TouchableOpacity
                                     activeOpacity={0.7}
                                     onPress={onClose}
@@ -166,7 +166,7 @@ export const CustomAlert = ({
                                         onClose();
                                     }
                                 }}
-                                className={type === 'confirm' ? "flex-1" : "w-full"}
+                                className={(type === 'confirm' || (type === 'warning' && !!onConfirm)) ? "flex-1" : "w-full"}
                             />
                         </View>
                     </View>

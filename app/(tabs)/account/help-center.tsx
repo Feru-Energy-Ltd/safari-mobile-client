@@ -5,7 +5,6 @@ import React, { useState } from 'react';
 import {
     LayoutAnimation,
     Platform,
-    SafeAreaView,
     ScrollView,
     Text,
     TextInput,
@@ -13,6 +12,7 @@ import {
     UIManager,
     View
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
     UIManager.setLayoutAnimationEnabledExperimental(true);

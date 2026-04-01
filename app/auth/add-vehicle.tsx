@@ -1,7 +1,8 @@
 import { router } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import React from 'react';
-import { Dimensions, Image, SafeAreaView, Text, TouchableOpacity, View } from 'react-native';
+import { Dimensions, Image, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import AddVehicleSvg from '../../assets/images/add-vehicle.svg';
 
 const { width } = Dimensions.get('window');
