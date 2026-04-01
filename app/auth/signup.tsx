@@ -246,7 +246,7 @@ export default function SignupScreen() {
                             I agree to SafariCharger{' '}
                             <Text
                                 className="text-[#01B764] font-semibold"
-                                onPress={() => router.push('/account/terms')}
+                                onPress={() => router.push('/terms')}
                             >
                                 Terms & Privacy Policy
                             </Text>.

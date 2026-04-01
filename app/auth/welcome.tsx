@@ -57,7 +57,7 @@ export default function WelcomeScreen() {
                             By continuing you accept our{'\n'}
                             <Text
                                 className="text-[#01B764] font-semibold"
-                                onPress={() => router.push('/account/terms')}
+                                onPress={() => router.push('/terms')}
                             >
                                 Terms & Privacy Policy
                             </Text>.

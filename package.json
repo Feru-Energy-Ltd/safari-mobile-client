@@ -6,7 +6,10 @@
     "start": "expo start",
     "android": "expo start --android --port 3000",
     "ios": "expo start --ios --port 3000",
-    "web": "expo start --web --port 3000"
+    "web": "expo start --web --port 3000",
+    "build:android": "eas build --clear-cache -p android --profile preview",
+    "build:ios": "eas build --clear-cache -p ios --profile preview",
+    "build:all": "eas build --clear-cache -p all --profile preview"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",

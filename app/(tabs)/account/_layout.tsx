@@ -7,7 +7,6 @@ export default function AccountLayout() {
             <Stack.Screen name="index" />
             <Stack.Screen name="personal-info" />
             <Stack.Screen name="help-center" />
-            <Stack.Screen name="terms" />
         </Stack>
     );
 }

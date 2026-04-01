@@ -259,7 +259,7 @@ export default function AccountScreen() {
                     <SettingsItem
                         icon="lock-closed-outline"
                         title="Privacy Policy"
-                        onPress={() => router.push('/account/terms')} />
+                        onPress={() => router.push('/terms')} />
                     <View style={[styles.inlineDivider, { backgroundColor: dividerColor }]} />
                     <SettingsItem icon="information-circle-outline" title="About SafariCharger" />
                 </View>
