@@ -2,7 +2,7 @@ import 'react-native-reanimated';
 import '../global.css';
 
 import { toastConfig } from '@/components/ToastConfig';
-import { isAuthenticated } from '@/services/auth.service';
+import { checkAuthStatus } from '@/services/auth.service';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
@@ -67,7 +67,7 @@ function RootLayoutNav() {
   useEffect(() => {
     async function checkAuth() {
       try {
-        await isAuthenticated();
+        await checkAuthStatus();
       } catch (e) {
         console.error('Auth check failed', e);
       } finally {

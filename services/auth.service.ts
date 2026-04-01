@@ -123,6 +123,27 @@ export async function isAuthenticated(): Promise<boolean> {
     return !!token;
 }
 
+/**
+ * Robust check used on app startup.
+ * If accessToken is missing but refreshToken exists, attempt to refresh.
+ */
+export async function checkAuthStatus(): Promise<boolean> {
+    const accessTkn = await getAccessToken();
+    if (accessTkn) return true;
+
+    const refreshTkn = await getRefreshToken();
+    if (refreshTkn) {
+        try {
+            await refreshToken(refreshTkn);
+            return true;
+        } catch (e) {
+            await clearTokens();
+            return false;
+        }
+    }
+    return false;
+}
+
 // ---------- Helpers ----------
 
 function authHeaders() {
@@ -141,34 +162,86 @@ async function handleResponse<T>(response: Response): Promise<T> {
     }
 
     if (!response.ok) {
-        let message = data?.message;
+        // Add status code to error if needed for specific logic (like 401 handling)
+        const error: any = new Error(data?.message || `Error: ${response.status}`);
+        error.status = response.status;
 
-        if (!message) {
+        if (!data?.message) {
             switch (response.status) {
                 case 401:
-                    message = 'Invalid email or password. Please try again.';
+                    error.message = 'Invalid email or password. Please try again.';
                     break;
                 case 403:
-                    message = 'You do not have permission to access this.';
+                    error.message = 'You do not have permission to access this.';
                     break;
                 case 404:
-                    message = 'Authentication service not found. Please try again later.';
+                    error.message = 'Authentication service not found. Please try again later.';
                     break;
                 case 409:
-                    message = 'An account with this email already exists.';
+                    error.message = 'An account with this email already exists.';
                     break;
                 case 500:
                 case 502:
                 case 503:
-                    message = 'Server error. Please try again later.';
+                    error.message = 'Server error. Please try again later.';
                     break;
                 default:
-                    message = `Something went wrong. Please try again later.`;
+                    error.message = `Something went wrong. Please try again later.`;
             }
         }
-        throw new Error(message);
+        throw error;
     }
     return data as T;
+}
+
+/**
+ * Standard fetch wrapper that includes auth headers and handles token refresh automatically.
+ */
+export async function authenticatedFetch<T>(url: string, options: RequestInit = {}): Promise<T> {
+    let accessTkn = await getAccessToken();
+
+    const fetchOptions = {
+        ...options,
+        headers: {
+            ...authHeaders(),
+            ...(accessTkn ? { 'Authorization': `Bearer ${accessTkn}` } : {}),
+            ...options.headers,
+        },
+    };
+
+    let response = await fetch(url, fetchOptions);
+
+    // If 401, try to refresh and retry
+    if (response.status === 401) {
+        const refreshTkn = await getRefreshToken();
+        if (refreshTkn) {
+            try {
+                // Perform refresh
+                const refreshData = await refreshToken(refreshTkn);
+                const newAccessTkn = refreshData.accessToken;
+
+                // Retry with new token
+                const retryOptions = {
+                    ...fetchOptions,
+                    headers: {
+                        ...fetchOptions.headers,
+                        'Authorization': `Bearer ${newAccessTkn}`,
+                    }
+                };
+                response = await fetch(url, retryOptions);
+            } catch (err) {
+                // If refresh fails, log out the user
+                await clearTokens();
+                throw new Error('Your session has expired. Please log in again.');
+            }
+        } else {
+            // No refresh token available
+            await clearTokens();
+            throw new Error('Your session has expired. Please log in again.');
+        }
+    }
+
+    return handleResponse<T>(response);
 }
 
 
@@ -220,16 +293,10 @@ export async function refreshToken(token: string): Promise<AuthResponse> {
 
 export async function logout(): Promise<void> {
     const refreshTkn = await getRefreshToken();
-    const accessTkn = await getAccessToken();
-
     if (refreshTkn) {
         try {
-            await fetch(`${BASE_URL}/auth/api/auth/logout`, {
+            await authenticatedFetch(`${BASE_URL}/auth/api/auth/logout`, {
                 method: 'POST',
-                headers: {
-                    ...authHeaders(),
-                    ...(accessTkn ? { 'Authorization': `Bearer ${accessTkn}` } : {})
-                },
                 body: JSON.stringify({ refreshToken: refreshTkn }),
             });
         } catch (e) {
@@ -240,38 +307,19 @@ export async function logout(): Promise<void> {
 }
 
 export async function getProfile(): Promise<UserProfile> {
-    const accessTkn = await getAccessToken();
-    const response = await fetch(`${BASE_URL}/auth/api/profile`, {
-        method: 'GET',
-        headers: {
-            ...authHeaders(),
-            ...(accessTkn ? { 'Authorization': `Bearer ${accessTkn}` } : {})
-        },
-    });
-    return handleResponse<UserProfile>(response);
+    return authenticatedFetch<UserProfile>(`${BASE_URL}/auth/api/profile`);
 }
+
 export async function updateProfile(payload: Partial<UserProfile>): Promise<UserProfile> {
-    const accessTkn = await getAccessToken();
-    const response = await fetch(`${BASE_URL}/auth/api/profile`, {
+    return authenticatedFetch<UserProfile>(`${BASE_URL}/auth/api/profile`, {
         method: 'PUT',
-        headers: {
-            ...authHeaders(),
-            ...(accessTkn ? { 'Authorization': `Bearer ${accessTkn}` } : {})
-        },
         body: JSON.stringify(payload),
     });
-    return handleResponse<UserProfile>(response);
 }
 
 export async function changePassword(payload: { oldPassword: string; newPassword: string }): Promise<any> {
-    const accessTkn = await getAccessToken();
-    const response = await fetch(`${BASE_URL}/auth/api/profile/change-password`, {
+    return authenticatedFetch<any>(`${BASE_URL}/auth/api/profile/change-password`, {
         method: 'POST',
-        headers: {
-            ...authHeaders(),
-            ...(accessTkn ? { 'Authorization': `Bearer ${accessTkn}` } : {})
-        },
         body: JSON.stringify(payload),
     });
-    return handleResponse<any>(response);
 }
