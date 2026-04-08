@@ -14,9 +14,10 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.safaricharge.safarimobileclient",
+      "bundleIdentifier": "com.safaricharger.safarimobileclient",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSLocationWhenInUseUsageDescription": "Safari Charger needs your location to show nearby charging stations on the map."
       }
     },
     "android": {
@@ -25,7 +26,11 @@
         "foregroundImage": "./assets/images/safaricharger-adaptive.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.safaricharge.safarimobileclient"
+      "package": "com.safaricharger.safarimobileclient",
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION"
+      ]
     },
     "web": {
       "bundler": "metro",
