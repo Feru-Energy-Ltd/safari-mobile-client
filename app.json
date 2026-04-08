@@ -14,7 +14,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.safaricharger.safarimobileclient",
+      "bundleIdentifier": "com.safaricharge.safarimobileclient",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -25,7 +25,7 @@
         "foregroundImage": "./assets/images/safaricharger-adaptive.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.safaricharger.safarimobileclient"
+      "package": "com.safaricharge.safarimobileclient"
     },
     "web": {
       "bundler": "metro",

@@ -248,7 +248,7 @@ export async function authenticatedFetch<T>(url: string, options: RequestInit = 
 // ---------- Auth API ----------
 
 export async function login(payload: LoginRequest): Promise<AuthResponse> {
-    const response = await fetch(`${BASE_URL}/auth/api/auth/login`, {
+    const response = await fetch(`${BASE_URL}/auth/login`, {
         method: 'POST',
         headers: authHeaders(),
         body: JSON.stringify(payload),
@@ -259,7 +259,7 @@ export async function login(payload: LoginRequest): Promise<AuthResponse> {
 }
 
 export async function selectContext(payload: { identityToken: string; contextId: number }): Promise<AuthResponse> {
-    const response = await fetch(`${BASE_URL}/auth/api/auth/select-context`, {
+    const response = await fetch(`${BASE_URL}/auth/select-context`, {
         method: 'POST',
         headers: authHeaders(),
         body: JSON.stringify(payload),
@@ -270,7 +270,7 @@ export async function selectContext(payload: { identityToken: string; contextId:
 }
 
 export async function register(payload: RegisterRequest): Promise<AuthResponse> {
-    const response = await fetch(`${BASE_URL}/auth/api/auth/register`, {
+    const response = await fetch(`${BASE_URL}/auth/register`, {
         method: 'POST',
         headers: authHeaders(),
         body: JSON.stringify(payload),
@@ -281,7 +281,7 @@ export async function register(payload: RegisterRequest): Promise<AuthResponse> 
 }
 
 export async function refreshToken(token: string): Promise<AuthResponse> {
-    const response = await fetch(`${BASE_URL}/auth/api/auth/refresh`, {
+    const response = await fetch(`${BASE_URL}/auth/refresh`, {
         method: 'POST',
         headers: authHeaders(),
         body: JSON.stringify({ refreshToken: token }),
@@ -295,7 +295,7 @@ export async function logout(): Promise<void> {
     const refreshTkn = await getRefreshToken();
     if (refreshTkn) {
         try {
-            await authenticatedFetch(`${BASE_URL}/auth/api/auth/logout`, {
+            await authenticatedFetch(`${BASE_URL}/auth/logout`, {
                 method: 'POST',
                 body: JSON.stringify({ refreshToken: refreshTkn }),
             });
@@ -307,18 +307,18 @@ export async function logout(): Promise<void> {
 }
 
 export async function getProfile(): Promise<UserProfile> {
-    return authenticatedFetch<UserProfile>(`${BASE_URL}/auth/api/profile`);
+    return authenticatedFetch<UserProfile>(`${BASE_URL}/auth/profile`);
 }
 
 export async function updateProfile(payload: Partial<UserProfile>): Promise<UserProfile> {
-    return authenticatedFetch<UserProfile>(`${BASE_URL}/auth/api/profile`, {
+    return authenticatedFetch<UserProfile>(`${BASE_URL}/auth/profile`, {
         method: 'PUT',
         body: JSON.stringify(payload),
     });
 }
 
 export async function changePassword(payload: { oldPassword: string; newPassword: string }): Promise<any> {
-    return authenticatedFetch<any>(`${BASE_URL}/auth/api/profile/change-password`, {
+    return authenticatedFetch<any>(`${BASE_URL}/auth/profile/change-password`, {
         method: 'POST',
         body: JSON.stringify(payload),
     });
