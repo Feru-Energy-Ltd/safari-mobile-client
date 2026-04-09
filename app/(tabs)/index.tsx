@@ -4,7 +4,7 @@ import * as Location from 'expo-location';
 import { Filter, Search } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import { Platform, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
-import MapView, { PROVIDER_GOOGLE } from 'react-native-maps';
+import MapView, { PROVIDER_DEFAULT, PROVIDER_GOOGLE } from 'react-native-maps';
 
 export default function HomeScreen() {
   const colorScheme = useColorScheme();
@@ -50,12 +50,12 @@ export default function HomeScreen() {
   return (
     <View className="flex-1 bg-white dark:bg-[#1C1F26]">
       <MapView
-        provider={PROVIDER_GOOGLE}
+        provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : PROVIDER_DEFAULT}
         style={StyleSheet.absoluteFillObject}
         region={region}
         showsUserLocation={true}
         showsMyLocationButton={true}
-        customMapStyle={isDarkMode ? darkMapStyle : []}
+        customMapStyle={Platform.OS === 'android' && isDarkMode ? darkMapStyle : []}
       />
 
       {/* Floating Search Bar */}
