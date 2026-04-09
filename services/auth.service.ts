@@ -200,13 +200,21 @@ async function handleResponse<T>(response: Response): Promise<T> {
 export async function authenticatedFetch<T>(url: string, options: RequestInit = {}): Promise<T> {
     let accessTkn = await getAccessToken();
 
+    const headers: Record<string, string> = {
+        ...authHeaders(),
+        ...(accessTkn ? { 'Authorization': `Bearer ${accessTkn}` } : {}),
+        ...(options.headers as Record<string, string>),
+    };
+
+    // If body is FormData, we MUST NOT set Content-Type: application/json
+    // fetch will automatically set the correct multipart/form-data header with boundary
+    if (options.body instanceof FormData) {
+        delete headers['Content-Type'];
+    }
+
     const fetchOptions = {
         ...options,
-        headers: {
-            ...authHeaders(),
-            ...(accessTkn ? { 'Authorization': `Bearer ${accessTkn}` } : {}),
-            ...options.headers,
-        },
+        headers,
     };
 
     let response = await fetch(url, fetchOptions);

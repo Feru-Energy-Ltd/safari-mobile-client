@@ -82,7 +82,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="booking"
         options={{
-          title: 'Booking',
+          title: 'My Booking',
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? 'calendar' : 'calendar-outline'} size={24} color={color} />
           ),
@@ -91,7 +91,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="wallet"
         options={{
-          title: 'Wallet',
+          title: 'My Wallet',
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? 'wallet' : 'wallet-outline'} size={24} color={color} />
           ),
