@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { router } from 'expo-router';
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 
@@ -26,7 +27,6 @@ export interface RegisterRequest {
     firstName: string;
     lastName: string;
     phone: string;
-    displayName: string;
 }
 
 export interface Account {
@@ -162,11 +162,12 @@ async function handleResponse<T>(response: Response): Promise<T> {
     }
 
     if (!response.ok) {
-        // Add status code to error if needed for specific logic (like 401 handling)
-        const error: any = new Error(data?.message || `Error: ${response.status}`);
+        // Add status code and title to error if needed for specific logic
+        const error: any = new Error(data?.detail || data?.message || `Error: ${response.status}`);
         error.status = response.status;
+        error.title = data?.title || 'Error';
 
-        if (!data?.message) {
+        if (!data?.detail && !data?.message) {
             switch (response.status) {
                 case 401:
                     error.message = 'Invalid email or password. Please try again.';
@@ -238,13 +239,15 @@ export async function authenticatedFetch<T>(url: string, options: RequestInit = 
                 };
                 response = await fetch(url, retryOptions);
             } catch (err) {
-                // If refresh fails, log out the user
+                // If refresh fails, log out the user and redirect to login
                 await clearTokens();
+                router.replace('/auth/login');
                 throw new Error('Your session has expired. Please log in again.');
             }
         } else {
             // No refresh token available
             await clearTokens();
+            router.replace('/auth/login');
             throw new Error('Your session has expired. Please log in again.');
         }
     }

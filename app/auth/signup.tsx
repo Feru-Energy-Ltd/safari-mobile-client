@@ -8,17 +8,18 @@ import React, { useState } from 'react';
 import { ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import CountryPicker, { Country, CountryCode, DARK_THEME, DEFAULT_THEME } from 'react-native-country-picker-modal';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Toast from 'react-native-toast-message';
 
 
 export default function SignupScreen() {
     const colorScheme = useColorScheme();
     const isDarkMode = colorScheme === 'dark';
 
-    const [fullName, setFullName] = useState('');
+    const [firstName, setFirstName] = useState('');
+    const [lastName, setLastName] = useState('');
     const [email, setEmail] = useState('');
     const [phone, setPhone] = useState('');
     const [password, setPassword] = useState('');
-    const [displayName, setDisplayName] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [isAgreed, setIsAgreed] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -80,7 +81,7 @@ export default function SignupScreen() {
     };
 
     const handleRegister = async () => {
-        if (!fullName || !email || !phone || !password) {
+        if (!firstName || !lastName || !email || !phone || !password) {
             showAlert('warning', 'Validation', 'Please fill in all required fields.');
             return;
         }
@@ -97,12 +98,6 @@ export default function SignupScreen() {
             return;
         }
 
-
-        // Split full name into firstName / lastName
-        const parts = fullName.trim().split(/\s+/);
-        const firstName = parts[0];
-        const lastName = parts.slice(1).join(' ') || parts[0];
-
         setIsLoading(true);
         try {
             const data = await register({
@@ -111,11 +106,22 @@ export default function SignupScreen() {
                 firstName,
                 lastName,
                 phone: `+${callingCode}${phone}`,
-                displayName: displayName || fullName.trim(),
             });
+
+            // Show success toast with message from backend
+            Toast.show({
+                type: 'success',
+                text1: 'Registration Successful',
+                text2: data.message || 'Please check your email for a verification code.',
+                position: 'top',
+                visibilityTime: 5000,
+                autoHide: true,
+                topOffset: 60,
+            });
+
             router.push('/auth/login');
         } catch (error: any) {
-            showAlert('error', 'Registration Failed', error?.message ?? 'Could not reach the server.');
+            showAlert('error', error?.title || 'Registration Failed', error?.message ?? 'Could not reach the server.');
         } finally {
             setIsLoading(false);
         }
@@ -144,31 +150,32 @@ export default function SignupScreen() {
                         </Text>
                     </View>
 
-                    {/* Full Name */}
+                    {/* First Name */}
                     <View className="mb-2 flex flex-col">
-                        <Text className={labelClasses}>Full Name</Text>
+                        <Text className={labelClasses}>First Name</Text>
                         <TextInput
                             className={inputClasses}
-                            placeholder="Enter your full name"
+                            placeholder="Enter your first name"
                             placeholderTextColor={isDarkMode ? '#555A64' : '#9E9E9E'}
-                            value={fullName}
-                            onChangeText={setFullName}
+                            value={firstName}
+                            onChangeText={setFirstName}
+                            autoComplete="name"
+                            textContentType="givenName"
                         />
                         <View className={underlineClasses} />
                     </View>
 
-                    {/* Display Name (optional) */}
+                    {/* Last Name */}
                     <View className="mb-2 flex flex-col">
-                        <Text className={labelClasses}>
-                            Display Name{' '}
-                            <Text className="text-gray-400 font-normal text-sm">(optional)</Text>
-                        </Text>
+                        <Text className={labelClasses}>Last Name</Text>
                         <TextInput
                             className={inputClasses}
-                            placeholder="How should we call you?"
+                            placeholder="Enter your last name"
                             placeholderTextColor={isDarkMode ? '#555A64' : '#9E9E9E'}
-                            value={displayName}
-                            onChangeText={setDisplayName}
+                            value={lastName}
+                            onChangeText={setLastName}
+                            autoComplete="name"
+                            textContentType="familyName"
                         />
                         <View className={underlineClasses} />
                     </View>
@@ -200,7 +207,7 @@ export default function SignupScreen() {
                     {/* Phone Number */}
                     <View className="mb-2 flex flex-col">
                         <Text className={labelClasses}>Phone Number</Text>
-                        <View className="flex-row items-center py-1">
+                        <View className="flex-row items-center">
                             <TouchableOpacity
                                 onPress={() => setShowCountryPicker(true)}
                                 className="flex-row items-center pr-3"
@@ -218,12 +225,12 @@ export default function SignupScreen() {
                                 />
                                 <Ionicons name="chevron-down" size={16} color={isDarkMode ? '#858E92' : '#9E9E9E'} className="ml-1" />
                             </TouchableOpacity>
-                            <Text className="text-[16px] text-gray-900 dark:text-white font-medium mr-2">
+                            <Text className="text-[16px] text-gray-900 dark:text-white font-medium mr-2" style={{ includeFontPadding: false, textAlignVertical: 'center' }}>
                                 +{callingCode}
                             </Text>
                             <TextInput
-                                className={inputClasses}
-                                placeholder="7 9 378 399"
+                                className="flex-1 py-4 text-[16px] text-gray-900 dark:text-white"
+                                placeholder="788007723"
                                 placeholderTextColor={isDarkMode ? '#555A64' : '#9E9E9E'}
                                 value={phone}
                                 onChangeText={(text) => {
@@ -232,6 +239,7 @@ export default function SignupScreen() {
                                 }}
                                 onBlur={() => validatePhone(phone)}
                                 keyboardType="phone-pad"
+                                style={{ paddingVertical: 0 }}
                             />
                         </View>
                         <View className={`h-[1.5px] ${phoneError ? 'bg-red-500' : 'bg-[#01B764]'}`} />

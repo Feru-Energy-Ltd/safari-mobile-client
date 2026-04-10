@@ -3,7 +3,7 @@ import { getProfile, UserProfile } from '@/services/auth.service';
 import { Charger, getChargers } from '@/services/charger.service';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
-import { Filter, Fuel, List, Map as MapIcon, Navigation2, Search, Target } from 'lucide-react-native';
+import { Fuel, List, Map as MapIcon, Navigation2, Search, Target } from 'lucide-react-native';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -29,13 +29,39 @@ import Animated, {
   withSequence,
   withTiming
 } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width, height } = Dimensions.get('window');
+
+const darkMapStyle = [
+  { "elementType": "geometry", "stylers": [{ "color": "#212121" }] },
+  { "elementType": "labels.icon", "stylers": [{ "visibility": "off" }] },
+  { "elementType": "labels.text.fill", "stylers": [{ "color": "#757575" }] },
+  { "elementType": "labels.text.stroke", "stylers": [{ "color": "#212121" }] },
+  { "featureType": "administrative", "elementType": "geometry", "stylers": [{ "color": "#757575" }] },
+  { "featureType": "administrative.country", "elementType": "labels.text.fill", "stylers": [{ "color": "#9e9e9e" }] },
+  { "featureType": "administrative.land_parcel", "stylers": [{ "visibility": "off" }] },
+  { "featureType": "administrative.locality", "elementType": "labels.text.fill", "stylers": [{ "color": "#bdbdbd" }] },
+  { "featureType": "poi", "elementType": "labels.text.fill", "stylers": [{ "color": "#757575" }] },
+  { "featureType": "poi.park", "elementType": "geometry", "stylers": [{ "color": "#181818" }] },
+  { "featureType": "poi.park", "elementType": "labels.text.fill", "stylers": [{ "color": "#616161" }] },
+  { "featureType": "poi.park", "elementType": "labels.text.stroke", "stylers": [{ "color": "#1b1b1b" }] },
+  { "featureType": "road", "elementType": "geometry.fill", "stylers": [{ "color": "#2c2c2c" }] },
+  { "featureType": "road", "elementType": "labels.text.fill", "stylers": [{ "color": "#8a8a8a" }] },
+  { "featureType": "road.arterial", "elementType": "geometry", "stylers": [{ "color": "#373737" }] },
+  { "featureType": "road.highway", "elementType": "geometry", "stylers": [{ "color": "#3c3c3c" }] },
+  { "featureType": "road.highway.controlled_access", "elementType": "geometry", "stylers": [{ "color": "#4e4e4e" }] },
+  { "featureType": "road.local", "elementType": "labels.text.fill", "stylers": [{ "color": "#616161" }] },
+  { "featureType": "transit", "elementType": "labels.text.fill", "stylers": [{ "color": "#757575" }] },
+  { "featureType": "water", "elementType": "geometry", "stylers": [{ "color": "#000000" }] },
+  { "featureType": "water", "elementType": "labels.text.fill", "stylers": [{ "color": "#3d3d3d" }] }
+];
 
 export default function HomeScreen() {
   const colorScheme = useColorScheme();
   const isDarkMode = colorScheme === 'dark';
   const mapRef = useRef<MapView>(null);
+  const insets = useSafeAreaInsets();
 
   const [viewMode, setViewMode] = useState<'map' | 'list'>('map');
   const [searchQuery, setSearchQuery] = useState('');
@@ -44,6 +70,7 @@ export default function HomeScreen() {
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [chargers, setChargers] = useState<Charger[]>([]);
   const [isLoadingChargers, setIsLoadingChargers] = useState(true);
+  const [selectedCharger, setSelectedCharger] = useState<Charger | null>(null);
 
   const [region, setRegion] = useState({
     latitude: -1.286389,
@@ -51,6 +78,32 @@ export default function HomeScreen() {
     latitudeDelta: 0.05,
     longitudeDelta: 0.05,
   });
+
+  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+
+  // Helper to calculate distance in KM
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const R = 6371; // Radius of the earth in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  };
+
+  const distanceText = useMemo(() => {
+    if (!selectedCharger || !userLocation) return null;
+    const dist = calculateDistance(
+      userLocation.latitude,
+      userLocation.longitude,
+      parseFloat(selectedCharger.locationLatitude),
+      parseFloat(selectedCharger.locationLongitude)
+    );
+    return dist < 1 ? `${(dist * 1000).toFixed(0)} m` : `${dist.toFixed(1)} km`;
+  }, [selectedCharger, userLocation]);
 
   // Pulse animation for User Avatar
   const pulseValue = useSharedValue(1);
@@ -130,6 +183,7 @@ export default function HomeScreen() {
         longitudeDelta: 0.02,
       };
       setRegion(newRegion);
+      setUserLocation({ latitude: location.coords.latitude, longitude: location.coords.longitude });
       mapRef.current?.animateToRegion(newRegion, 1000);
     })();
   }, []);
@@ -145,6 +199,7 @@ export default function HomeScreen() {
       latitudeDelta: 0.015,
       longitudeDelta: 0.015,
     };
+    setUserLocation({ latitude: location.coords.latitude, longitude: location.coords.longitude });
     mapRef.current?.animateToRegion(newRegion, 1000);
   };
 
@@ -160,12 +215,15 @@ export default function HomeScreen() {
       longitudeDelta: 0.01,
     };
     mapRef.current?.animateToRegion(newRegion, 1000);
+    setSelectedCharger(charger);
+    setViewMode('map');
     setIsDropdownVisible(false);
     Keyboard.dismiss();
   };
 
   const ChargerMarker = ({ charger }: { charger: Charger }) => {
     const isAvailable = charger.onlineStatus === 'ON';
+    const isSelected = selectedCharger?.id === charger.id;
     const coordinate = {
       latitude: parseFloat(charger.locationLatitude),
       longitude: parseFloat(charger.locationLongitude)
@@ -175,9 +233,17 @@ export default function HomeScreen() {
     if (isNaN(coordinate.latitude) || isNaN(coordinate.longitude)) return null;
 
     return (
-      <Marker coordinate={coordinate}>
-        <View className={`w-10 h-10 rounded-full ${isAvailable ? 'bg-[#01B764]' : 'bg-[#F75555]'} border-2 border-white shadow-lg items-center justify-center`}>
-          <Fuel size={16} color="white" />
+      <Marker
+        coordinate={coordinate}
+        onPress={() => selectCharger(charger)}
+      >
+        <View className={`items-center justify-center`}>
+          {isSelected && (
+            <View className="absolute -top-1 w-12 h-12 rounded-full bg-[#01B764]/20 items-center justify-center" />
+          )}
+          <View className={`w-10 h-10 rounded-full ${isAvailable ? 'bg-[#01B764]' : 'bg-[#F75555]'} border-2 border-white shadow-lg items-center justify-center`}>
+            <Fuel size={16} color="white" />
+          </View>
         </View>
       </Marker>
     );
@@ -216,6 +282,8 @@ export default function HomeScreen() {
             initialRegion={region}
             showsUserLocation={false}
             showsMyLocationButton={false}
+            onPress={() => setSelectedCharger(null)}
+            customMapStyle={isDarkMode ? darkMapStyle : []}
           >
             {/* Chargers */}
             {filteredChargers.map(charger => (
@@ -240,27 +308,89 @@ export default function HomeScreen() {
             </Marker>
           </MapView>
 
-          <View className="absolute bottom-28 right-0 items-center">
-            <View className="flex-row space-x-4 bg-white/10 p-2 rounded-full">
-              <TouchableOpacity
-                onPress={() => setViewMode('list')}
-                className="w-14 h-14 bg-[#01B764] rounded-full items-center justify-center shadow-lg"
-              >
-                <List size={24} color="white" />
-              </TouchableOpacity>
+          {/* Floating Action Buttons */}
+          <View
+            className="absolute right-4 items-center"
+            style={{
+              bottom: insets.bottom + (selectedCharger ? 260 : 40),
+            }}
+          >
+            <TouchableOpacity
+              onPress={() => setViewMode('list')}
+              className="w-14 h-14 bg-white dark:bg-[#1C1F26] rounded-2xl items-center justify-center shadow-xl border border-gray-100 dark:border-gray-800 mb-4"
+              style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 10, elevation: 5 }}
+            >
+              <List size={24} color="#01B764" />
+            </TouchableOpacity>
 
-              <TouchableOpacity className="w-14 h-14 bg-[#01B764] rounded-full items-center justify-center shadow-lg">
-                <Navigation2 size={24} color="white" />
-              </TouchableOpacity>
+            <TouchableOpacity
+              className="w-14 h-14 bg-white dark:bg-[#1C1F26] rounded-2xl items-center justify-center shadow-xl border border-gray-100 dark:border-gray-800 mb-4"
+              style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 10, elevation: 5 }}
+            >
+              <Navigation2 size={24} color="#01B764" />
+            </TouchableOpacity>
 
-              <TouchableOpacity
-                onPress={locateUser}
-                className="w-14 h-14 bg-[#01B764] rounded-full items-center justify-center shadow-lg"
-              >
-                <Target size={24} color="white" />
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity
+              onPress={locateUser}
+              className="w-14 h-14 bg-[#01B764] rounded-2xl items-center justify-center shadow-xl"
+              style={{ shadowColor: '#01B764', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 15, elevation: 8 }}
+            >
+              <Target size={24} color="white" />
+            </TouchableOpacity>
           </View>
+
+          {/* Charger Detail Card */}
+          {selectedCharger && (
+            <Animated.View
+              entering={FadeIn.duration(300)}
+              exiting={FadeOut.duration(200)}
+              className="absolute bottom-0 left-0 right-0 bg-white dark:bg-[#1C1F26] rounded-t-[40px] shadow-2xl px-6 pt-8 pb-10 border-t border-gray-100 dark:border-gray-800"
+              style={{ marginBottom: insets.bottom - 20 }}
+            >
+              <View className="flex-row justify-between items-start mb-4">
+                <View className="flex-1 mr-4">
+                  <Text className="text-xl font-bold text-gray-900 dark:text-white mb-1">
+                    {selectedCharger.chargePointVendor || 'Charger'} - {selectedCharger.address}
+                  </Text>
+                  <Text className="text-gray-500 dark:text-gray-400 font-medium">
+                    {selectedCharger.address}
+                  </Text>
+                </View>
+              </View>
+
+              <View className="flex-row items-center mb-6">
+                <View className={`px-3 py-1.5 rounded-lg ${selectedCharger.onlineStatus === 'ON' ? 'bg-[#01B764]' : 'bg-[#F75555]'} mr-3`}>
+                  <Text className="text-white font-bold text-xs uppercase">
+                    {selectedCharger.onlineStatus === 'ON' ? 'Available' : 'Unavailable'}
+                  </Text>
+                </View>
+                {distanceText && (
+                  <View className="flex-row items-center bg-gray-50 dark:bg-gray-800 px-3 py-1.5 rounded-lg">
+                    <Ionicons name="location" size={14} color="#01B764" />
+                    <Text className="ml-1 text-gray-600 dark:text-gray-300 font-bold text-xs">{distanceText}</Text>
+                  </View>
+                )}
+              </View>
+
+              <View className="flex-row items-center space-x-4 mb-8">
+                <View className="flex-row items-center">
+                  <Ionicons name="flash" size={18} color="#01B764" />
+                  <Text className="ml-1.5 text-gray-900 dark:text-white font-bold text-sm">
+                    {selectedCharger.chargePointModel}
+                  </Text>
+                </View>
+              </View>
+
+              <View className="flex-row space-x-6">
+                <TouchableOpacity className="flex-1 h-14 border border-[#01B764] rounded-2xl items-center justify-center">
+                  <Text className="text-[#01B764] font-bold text-lg">View</Text>
+                </TouchableOpacity>
+                <TouchableOpacity className="flex-1 h-14 bg-[#01B764] rounded-2xl items-center justify-center shadow-lg">
+                  <Text className="text-white font-bold text-lg">Book</Text>
+                </TouchableOpacity>
+              </View>
+            </Animated.View>
+          )}
         </>
       ) : (
         <View className="flex-1 pt-32">
@@ -283,10 +413,14 @@ export default function HomeScreen() {
             />
           )}
 
-          <View className="absolute bottom-32 right-6">
+          <View
+            className="absolute right-6"
+            style={{ bottom: insets.bottom + 80 }}
+          >
             <TouchableOpacity
               onPress={() => setViewMode('map')}
-              className="w-14 h-14 bg-[#01B764] rounded-full items-center justify-center shadow-lg"
+              className="w-14 h-14 bg-[#01B764] rounded-full items-center justify-center shadow-xl"
+              style={{ shadowColor: '#01B764', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 15, elevation: 8 }}
             >
               <MapIcon size={24} color="white" />
             </TouchableOpacity>
@@ -309,9 +443,9 @@ export default function HomeScreen() {
             onChangeText={setSearchQuery}
             onFocus={() => setIsDropdownVisible(true)}
           />
-          <TouchableOpacity className="ml-2 bg-gray-50 dark:bg-gray-800 p-2 rounded-xl">
+          {/* <TouchableOpacity className="ml-2 bg-gray-50 dark:bg-gray-800 p-2 rounded-xl">
             <Filter size={20} color="#01B764" />
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
 
         {/* Search Results Dropdown */}

@@ -121,7 +121,7 @@ export default function LoginScreen() {
             }
         } catch (error: any) {
             // console.error('Login error:', error);
-            showAlert('error', 'Login Failed', error?.message ?? 'Could not reach the server.');
+            showAlert('error', error?.title || 'Login Failed', error?.message ?? 'Could not reach the server.');
         } finally {
             setIsLoading(false);
         }
@@ -165,6 +165,8 @@ export default function LoginScreen() {
                             onBlur={() => validateEmail(email)}
                             keyboardType="email-address"
                             autoCapitalize="none"
+                            autoComplete="email"
+                            textContentType="emailAddress"
                         />
                         <View className={`h-[1.5px] ${emailError ? 'bg-red-500' : 'bg-[#01B764]'}`} />
                         <View className="h-8 pt-1">
@@ -185,6 +187,8 @@ export default function LoginScreen() {
                                 value={password}
                                 onChangeText={setPassword}
                                 secureTextEntry={!showPassword}
+                                autoComplete="password"
+                                textContentType="password"
                             />
                             <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
                                 <Ionicons

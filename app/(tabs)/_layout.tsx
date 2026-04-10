@@ -19,39 +19,15 @@ export default function TabLayout() {
       screenOptions={{
         tabBarActiveTintColor: '#01B764',
         tabBarInactiveTintColor: isDarkMode ? '#858E92' : '#9E9E9E',
-        tabBarStyle: Platform.OS === 'ios' ? {
-          position: 'absolute',
-          bottom: bottomPadding,
-          left: 16,
-          right: 16,
-          height: 64,
-          borderRadius: 32,
-          borderTopWidth: 0,
-          backgroundColor: 'transparent',
-          shadowColor: isDarkMode ? '#000' : '#858E92',
-          shadowOffset: { width: 0, height: 8 },
-          shadowOpacity: 0.2,
-          shadowRadius: 15,
-          paddingBottom: 0, // explicitly override safe area padding
-        } : {
+        tabBarStyle: {
           backgroundColor: isDarkMode ? '#1C1F26' : '#FFFFFF',
           borderTopColor: isDarkMode ? '#1C1F26' : '#F3F3F3',
           borderTopWidth: 1,
-          height: 65 + bottomPadding,
-          paddingBottom: bottomPadding,
+          height: Platform.OS === 'ios' ? 88 : 65 + insets.bottom,
+          paddingBottom: Platform.OS === 'ios' ? 30 : insets.bottom,
           elevation: 10,
         },
-        tabBarBackground: () => (
-          Platform.OS === 'ios' ? (
-            <View style={{ flex: 1, borderRadius: 32, overflow: 'hidden' }}>
-              <View style={[StyleSheet.absoluteFill, { backgroundColor: isDarkMode ? 'rgba(28, 31, 38, 0.75)' : 'rgba(255, 255, 255, 0.85)' }]} />
-              <BlurView tint={isDarkMode ? 'dark' : 'light'} intensity={60} style={StyleSheet.absoluteFill} />
-            </View>
-          ) : null
-        ),
-        tabBarItemStyle: Platform.OS === 'ios' ? {
-          paddingTop: 6,
-        } : {
+        tabBarItemStyle: {
           paddingTop: 8,
           paddingBottom: 4,
         },
@@ -71,20 +47,11 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="saved"
+        name="charging"
         options={{
-          title: 'Saved',
+          title: 'Charging',
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'bookmark' : 'bookmark-outline'} size={24} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="booking"
-        options={{
-          title: 'My Booking',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'calendar' : 'calendar-outline'} size={24} color={color} />
+            <Ionicons name={focused ? 'battery-charging' : 'battery-charging-outline'} size={24} color={color} />
           ),
         }}
       />
