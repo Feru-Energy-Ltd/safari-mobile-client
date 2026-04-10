@@ -10,6 +10,8 @@ import { ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-nativ
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 
+import { getEmailErrorMessage } from '@/utils/validation';
+
 export default function LoginScreen() {
     const colorScheme = useColorScheme();
     const isDarkMode = colorScheme === 'dark';
@@ -20,16 +22,9 @@ export default function LoginScreen() {
     const [emailError, setEmailError] = useState('');
 
     const validateEmail = (text: string) => {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!text) {
-            setEmailError('Email is required');
-            return false;
-        } else if (!emailRegex.test(text)) {
-            setEmailError('Please enter a valid email address');
-            return false;
-        }
-        setEmailError('');
-        return true;
+        const error = getEmailErrorMessage(text);
+        setEmailError(error || '');
+        return error === null;
     };
 
     // Alert State

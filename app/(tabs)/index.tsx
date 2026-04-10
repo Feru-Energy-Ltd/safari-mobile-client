@@ -31,6 +31,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { calculateDistance } from '@/utils/location';
+
 const { width, height } = Dimensions.get('window');
 
 const darkMapStyle = [
@@ -81,18 +83,6 @@ export default function HomeScreen() {
 
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
 
-  // Helper to calculate distance in KM
-  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
-    const R = 6371; // Radius of the earth in km
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-      Math.sin(dLon / 2) * Math.sin(dLon / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c;
-  };
 
   const distanceText = useMemo(() => {
     if (!selectedCharger || !userLocation) return null;
@@ -381,7 +371,7 @@ export default function HomeScreen() {
                 </View>
               </View>
 
-              <View className="flex-row space-x-6">
+              <View className="flex-row gap-x-4">
                 <TouchableOpacity className="flex-1 h-14 border border-[#01B764] rounded-2xl items-center justify-center">
                   <Text className="text-[#01B764] font-bold text-lg">View</Text>
                 </TouchableOpacity>
@@ -431,7 +421,7 @@ export default function HomeScreen() {
       {/* Persistent Floating Search Bar */}
       <View className="absolute top-12 left-4 right-4 z-20">
         <View
-          className="flex-row items-center px-4 py-3 rounded-2xl bg-white dark:bg-[#1C1F26] border border-gray-100 dark:border-gray-800 shadow-2xl"
+          className={`flex-row items-center px-4 ${Platform.OS === 'ios' ? 'py-4' : 'py-3'} rounded-2xl bg-white dark:bg-[#1C1F26] border border-gray-100 dark:border-gray-800 shadow-2xl`}
           style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 5 }}
         >
           <Search size={20} color={isDarkMode ? '#858E92' : '#9E9E9E'} />

@@ -10,6 +10,8 @@ import CountryPicker, { Country, CountryCode, DARK_THEME, DEFAULT_THEME } from '
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 
+import { getEmailErrorMessage, getPhoneErrorMessage } from '@/utils/validation';
+
 
 export default function SignupScreen() {
     const colorScheme = useColorScheme();
@@ -27,30 +29,15 @@ export default function SignupScreen() {
     const [phoneError, setPhoneError] = useState('');
 
     const validatePhone = (text: string) => {
-        const phoneRegex = /^\d{7,15}$/;
-        const cleanPhone = text.replace(/[\s-]/g, '');
-        if (!cleanPhone) {
-            setPhoneError('Phone number is required');
-            return false;
-        } else if (!phoneRegex.test(cleanPhone)) {
-            setPhoneError('Please enter a valid phone number');
-            return false;
-        }
-        setPhoneError('');
-        return true;
+        const error = getPhoneErrorMessage(text);
+        setPhoneError(error || '');
+        return error === null;
     };
 
     const validateEmail = (text: string) => {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!text) {
-            setEmailError('Email is required');
-            return false;
-        } else if (!emailRegex.test(text)) {
-            setEmailError('Please enter a valid email address');
-            return false;
-        }
-        setEmailError('');
-        return true;
+        const error = getEmailErrorMessage(text);
+        setEmailError(error || '');
+        return error === null;
     };
 
     // Alert State
