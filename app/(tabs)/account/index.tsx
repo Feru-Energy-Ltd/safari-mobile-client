@@ -1,4 +1,5 @@
 import { AlertType, CustomAlert } from '@/components/CustomAlert';
+import ShieldFlashIcon from '@/components/Icons';
 import { getProfile, logout, UserProfile } from '@/services/auth.service';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -153,9 +154,8 @@ export default function AccountScreen() {
             {/* Header */}
             <View style={styles.header}>
                 <View style={styles.headerLeft}>
-                    <View style={styles.headerIconContainer}>
-                        <Ionicons name="flash" size={16} color="white" />
-                    </View>
+                    <ShieldFlashIcon size={30} color="#01B764" />
+
                     <Text style={[styles.headerTitle, { color: isDarkMode ? '#FFFFFF' : '#1C1F26' }]}>
                         Account
                     </Text>

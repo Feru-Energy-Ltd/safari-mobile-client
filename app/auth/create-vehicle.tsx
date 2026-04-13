@@ -1,4 +1,5 @@
 import { Button } from '@/components/Button';
+import YellowCardScanner from '@/components/YellowCardScanner';
 import { useColorScheme } from '@/components/useColorScheme';
 import { ConnectorType, createVehicle, getConnectorTypes } from '@/services/vehicle.service';
 import { Ionicons } from '@expo/vector-icons';
@@ -56,6 +57,7 @@ export default function CreateVehicleScreen() {
     const [isLoadConnectors, setIsLoadConnectors] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showConnectorModal, setShowConnectorModal] = useState(false);
+    const [showScanner, setShowScanner] = useState(false);
 
     useEffect(() => {
         const fetchConnectors = async () => {
@@ -212,6 +214,26 @@ export default function CreateVehicleScreen() {
                         </Text>
                     </View>
 
+                    {/* Scan Action */}
+                    <TouchableOpacity
+                        onPress={() => setShowScanner(true)}
+                        activeOpacity={0.8}
+                        style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            backgroundColor: isDarkMode ? '#233F31' : '#E8F8F0',
+                            paddingVertical: 14,
+                            borderRadius: 16,
+                            marginBottom: 24,
+                            borderWidth: 1,
+                            borderColor: '#01B764',
+                        }}
+                    >
+                        <Ionicons name="camera" size={20} color="#01B764" style={{ marginRight: 8 }} />
+                        <Text style={{ color: '#01B764', fontWeight: '700', fontSize: 15 }}>Scan Yellow Card</Text>
+                    </TouchableOpacity>
+
                     {renderInput('Plate Number', plateNumber, setPlateNumber, 'car-outline', 'e.g. RAA 445K')}
                     {renderInput('VIN Number', vinNumber, setVinNumber, 'barcode-outline', 'Vehicle ID Number', true, 'default')}
                     {renderInput('Battery Capacity', batteryCapacity, setBatteryCapacity, 'battery-full-outline', 'e.g. 75', true, 'numeric', 'kWh')}
@@ -347,6 +369,21 @@ export default function CreateVehicleScreen() {
                         </View>
                     </View>
                 </Modal>
+
+                <YellowCardScanner
+                    visible={showScanner}
+                    onClose={() => setShowScanner(false)}
+                    isDarkMode={isDarkMode}
+                    onScan={(plate, vin) => {
+                        if (plate) setPlateNumber(plate);
+                        if (vin) setVinNumber(vin);
+                        Toast.show({
+                            type: 'success',
+                            text1: 'Scanned Successfully',
+                            text2: 'Please verify the details below.',
+                        });
+                    }}
+                />
             </KeyboardAvoidingView>
         </SafeAreaView>
     );

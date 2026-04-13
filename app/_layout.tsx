@@ -89,6 +89,8 @@ function RootLayoutNav() {
           <Stack.Screen name="onboarding" />
           <Stack.Screen name="auth" />
           <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="wallet/topup" />
+          <Stack.Screen name="wallet/transactions" />
           <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
           <Stack.Screen name="terms" />
         </Stack>
