@@ -1,5 +1,5 @@
 /**
- * Utility to parse vehicle registration details from raw OCR text blocks.
+ * Utility file to parse vehicle registration details from raw OCR text blocks.
  * Targets Rwanda "Yellow Card" structure.
  */
 
