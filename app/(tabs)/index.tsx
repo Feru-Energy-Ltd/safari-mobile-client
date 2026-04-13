@@ -4,7 +4,7 @@ import { Charger, getChargers } from '@/services/charger.service';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { Fuel, List, Map as MapIcon, Navigation2, Search, Target } from 'lucide-react-native';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Dimensions,

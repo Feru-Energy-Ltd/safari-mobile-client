@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useColorScheme } from 'nativewind';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
     LayoutAnimation,
     Platform,

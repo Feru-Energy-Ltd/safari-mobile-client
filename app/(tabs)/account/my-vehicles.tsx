@@ -3,7 +3,7 @@ import { useColorScheme } from '@/components/useColorScheme';
 import { deleteVehicle, getVehicles, Vehicle } from '@/services/vehicle.service';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,

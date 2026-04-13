@@ -1,8 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import { BlurView } from 'expo-blur';
 import { Tabs } from 'expo-router';
 import React from 'react';
-import { Platform, StyleSheet, View } from 'react-native';
+import { Platform } from 'react-native';
 
 import { useColorScheme } from '@/components/useColorScheme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -12,7 +11,7 @@ export default function TabLayout() {
   const isDarkMode = colorScheme === 'dark';
   const insets = useSafeAreaInsets();
 
-  const bottomPadding = Math.max(insets.bottom, 15);
+  // const bottomPadding = Math.max(insets.bottom, 15);
 
   return (
     <Tabs
