@@ -1,5 +1,6 @@
 import React from 'react';
 import { ActivityIndicator, Text, TouchableOpacity } from 'react-native';
+import { useColorScheme } from './useColorScheme';
 
 export interface IButtonProps {
     title: string;
@@ -13,9 +14,16 @@ export interface IButtonProps {
 }
 
 export const Button = (props: IButtonProps) => {
+    const colorScheme = useColorScheme();
+    const isDarkMode = colorScheme === 'dark';
     const isPrimary = props.type === 'primary';
-    const defaultBg = isPrimary ? 'bg-[#01B764]' : 'bg-[#EAF9F0]';
-    const defaultTextColor = isPrimary ? 'text-white' : 'text-[#01B764]';
+
+    const defaultBg = isPrimary
+        ? 'bg-[#01B764]'
+        : (isDarkMode ? 'bg-[#35383F]' : 'bg-[#EAF9F0]');
+    const defaultTextColor = isPrimary
+        ? 'text-white'
+        : (isDarkMode ? 'text-white' : 'text-[#01B764]');
 
     return (
         <TouchableOpacity
@@ -32,7 +40,7 @@ export const Button = (props: IButtonProps) => {
             } : {}}
         >
             {props.loading ? (
-                <ActivityIndicator color={isPrimary ? "#fff" : "#01B764"} />
+                <ActivityIndicator color={isPrimary ? "#fff" : (isDarkMode ? "#fff" : "#01B764")} />
             ) : (
                 <Text className={`text-lg font-semibold ${defaultTextColor} ${props.textStyle || ''}`}>
                     {props.title}

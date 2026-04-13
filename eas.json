@@ -16,6 +16,14 @@
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "ios": {
+        "appleId": "feruenergyltd@gmail.com",
+        "ascAppId": "6761709364"
+      },
+      "android": {
+        "track": "internal"
+      }
+    }
   }
 }

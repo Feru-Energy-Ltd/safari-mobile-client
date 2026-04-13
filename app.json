@@ -1,31 +1,36 @@
 {
   "expo": {
-    "name": "safari-mobile-client",
+    "name": "Safari Charger",
     "slug": "safari-mobile-client",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/safaricharger.png",
     "scheme": "safarimobileclient",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "splash": {
       "image": "./assets/images/safaricharger.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#FFFFFF"
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.safaricharger.safarimobileclient",
+      "bundleIdentifier": "com.safaricharge.safarimobileclient",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSLocationWhenInUseUsageDescription": "Safari Charger needs your location to show nearby charging stations on the map."
       }
     },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#ffffff",
-        "foregroundImage": "./assets/images/safaricharger.png"
+        "foregroundImage": "./assets/images/safaricharger-adaptive.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.safaricharger.safarimobileclient"
+      "package": "com.safaricharge.safarimobileclient",
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION"
+      ]
     },
     "web": {
       "bundler": "metro",
