@@ -79,6 +79,12 @@ export async function getTransactions(accountNumber: string, page: number = 0, s
     );
 }
 
+export async function getRecentTransactions(accountNumber: string): Promise<TransactionResponse> {
+    return authenticatedFetch<TransactionResponse>(
+        `${BASE_URL}/csms/app/wallets/accounts/${accountNumber}/transactions/recents`
+    );
+}
+
 export async function topUpWallet(payload: TopUpRequest): Promise<TopUpResponse> {
     return authenticatedFetch<TopUpResponse>(`${BASE_URL}/csms/app/wallets/topup`, {
         method: 'POST',

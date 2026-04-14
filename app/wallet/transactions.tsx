@@ -7,10 +7,12 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
     ActivityIndicator,
     FlatList,
+    Pressable,
     RefreshControl,
     Text,
     TextInput,
     TouchableOpacity,
+    TouchableWithoutFeedback,
     View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -20,7 +22,11 @@ export default function TransactionsScreen() {
     const [refreshing, setRefreshing] = useState(false);
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
-    const [accountNumber, setAccountNumber] = useState<string | null>(null);
+    const [userAccountNumber, setUserAccountNumber] = useState<string | null>(null);
+    const [filterVisible, setFilterVisible] = useState(false);
+    const [statusFilter, setStatusFilter] = useState<'ALL' | 'SUCCESSFUL' | 'PENDING' | 'FAILED'>('ALL');
+    const [typeFilter, setTypeFilter] = useState<'ALL' | 'CREDIT' | 'DEBIT'>('ALL');
+
     const colorScheme = useColorScheme();
     const isDarkMode = colorScheme === 'dark';
     const textColor = isDarkMode ? '#FFFFFF' : '#111827';
@@ -41,7 +47,7 @@ export default function TransactionsScreen() {
         async function init() {
             try {
                 const info = await getWalletBalance();
-                setAccountNumber(info.accountNumber);
+                setUserAccountNumber(info.accountNumber);
                 fetchTransactions(info.accountNumber);
             } catch (error) {
                 console.error('Error initializing transactions screen:', error);
@@ -52,22 +58,38 @@ export default function TransactionsScreen() {
     }, []);
 
     const onRefresh = () => {
-        if (accountNumber) {
+        if (userAccountNumber) {
             setRefreshing(true);
-            fetchTransactions(accountNumber);
+            fetchTransactions(userAccountNumber);
         }
     };
 
     const filteredTransactions = useMemo(() => {
-        if (!searchQuery) return transactions;
-        const lowQuery = searchQuery.toLowerCase();
-        return transactions.filter(tx =>
-            tx.type.toLowerCase().includes(lowQuery) ||
-            tx.transactionId.toLowerCase().includes(lowQuery) ||
-            tx.status.toLowerCase().includes(lowQuery) ||
-            tx.amount.toLowerCase().includes(lowQuery)
-        );
-    }, [transactions, searchQuery]);
+        let result = transactions;
+
+        // Apply Status Filter
+        if (statusFilter !== 'ALL') {
+            result = result.filter(tx => tx.status === statusFilter);
+        }
+
+        // Apply Type Filter
+        if (typeFilter !== 'ALL') {
+            result = result.filter(tx => tx.type === typeFilter);
+        }
+
+        // Apply Search Query
+        if (searchQuery) {
+            const lowQuery = searchQuery.toLowerCase();
+            result = result.filter(tx =>
+                tx.type.toLowerCase().includes(lowQuery) ||
+                tx.transactionId.toLowerCase().includes(lowQuery) ||
+                tx.status.toLowerCase().includes(lowQuery) ||
+                tx.amount.toLowerCase().includes(lowQuery)
+            );
+        }
+
+        return result;
+    }, [transactions, searchQuery, statusFilter, typeFilter]);
 
     const formatCurrency = (amount: number | string) => {
         const value = typeof amount === 'string' ? parseFloat(amount) : amount;
@@ -145,11 +167,108 @@ export default function TransactionsScreen() {
                         value={searchQuery}
                         onChangeText={setSearchQuery}
                     />
-                    <TouchableOpacity>
-                        <Filter size={20} color="#01B764" />
+                    <TouchableOpacity
+                        onPress={() => setFilterVisible(true)}
+                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                        className="p-1"
+                    >
+                        <Filter size={20} color={statusFilter !== 'ALL' || typeFilter !== 'ALL' ? "#01B764" : "#9E9E9E"} />
                     </TouchableOpacity>
                 </View>
+
+                {/* Filter Badges */}
+                {(statusFilter !== 'ALL' || typeFilter !== 'ALL') && (
+                    <View className="flex-row flex-wrap gap-2 mt-3">
+                        {typeFilter !== 'ALL' && (
+                            <View className="bg-[#01B764]/10 px-3 py-1 rounded-full flex-row items-center">
+                                <Text className="text-[#01B764] text-xs font-medium mr-1">{typeFilter}</Text>
+                                <TouchableOpacity onPress={() => setTypeFilter('ALL')}>
+                                    <Ionicons name="close-circle" size={14} color="#01B764" />
+                                </TouchableOpacity>
+                            </View>
+                        )}
+                        {statusFilter !== 'ALL' && (
+                            <View className="bg-[#01B764]/10 px-3 py-1 rounded-full flex-row items-center">
+                                <Text className="text-[#01B764] text-xs font-medium mr-1">{statusFilter}</Text>
+                                <TouchableOpacity onPress={() => setStatusFilter('ALL')}>
+                                    <Ionicons name="close-circle" size={14} color="#01B764" />
+                                </TouchableOpacity>
+                            </View>
+                        )}
+                        <TouchableOpacity onPress={() => { setStatusFilter('ALL'); setTypeFilter('ALL'); }}>
+                            <Text className="text-gray-500 text-xs mt-1 ml-1">Clear all</Text>
+                        </TouchableOpacity>
+                    </View>
+                )}
             </View>
+
+            {/* Filter Overlay (Absolute View instead of Modal for better reliability) */}
+            {filterVisible && (
+                <View
+                    style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1000 }}
+                >
+                    <Pressable
+                        style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}
+                        onPress={() => setFilterVisible(false)}
+                    >
+                        <TouchableWithoutFeedback>
+                            <View className="bg-white dark:bg-[#1C1F26] rounded-t-[40px] p-6 pb-12 shadow-2xl">
+                                <View className="w-12 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full self-center mb-6" />
+
+                                <View className="flex-row justify-between items-center mb-6">
+                                    <Text className="text-2xl font-bold text-gray-900 dark:text-white">Filter</Text>
+                                    <TouchableOpacity onPress={() => { setStatusFilter('ALL'); setTypeFilter('ALL'); }}>
+                                        <Text className="text-[#01B764] font-bold">Reset</Text>
+                                    </TouchableOpacity>
+                                </View>
+
+                                <Text className="text-lg font-bold text-gray-900 dark:text-white mb-4">Transaction Type</Text>
+                                <View className="flex-row flex-wrap gap-3 mb-8">
+                                    {['ALL', 'CREDIT', 'DEBIT'].map((type) => (
+                                        <TouchableOpacity
+                                            key={type}
+                                            onPress={() => setTypeFilter(type as any)}
+                                            className={`px-6 py-2.5 rounded-full border ${typeFilter === type
+                                                ? 'bg-[#01B764] border-[#01B764]'
+                                                : 'bg-transparent border-gray-200 dark:border-gray-700'
+                                                }`}
+                                        >
+                                            <Text className={`font-bold ${typeFilter === type ? 'text-white' : 'text-gray-500'}`}>
+                                                {type === 'ALL' ? 'All' : type === 'CREDIT' ? 'Topup' : 'Paid'}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    ))}
+                                </View>
+
+                                <Text className="text-lg font-bold text-gray-900 dark:text-white mb-4">Status</Text>
+                                <View className="flex-row flex-wrap gap-3 mb-10">
+                                    {['ALL', 'SUCCESSFUL', 'PENDING', 'FAILED'].map((status) => (
+                                        <TouchableOpacity
+                                            key={status}
+                                            onPress={() => setStatusFilter(status as any)}
+                                            className={`px-6 py-2.5 rounded-full border ${statusFilter === status
+                                                ? 'bg-[#01B764] border-[#01B764]'
+                                                : 'bg-transparent border-gray-200 dark:border-gray-700'
+                                                }`}
+                                        >
+                                            <Text className={`font-bold ${statusFilter === status ? 'text-white' : 'text-gray-500'}`}>
+                                                {status === 'ALL' ? 'All' : status.charAt(0) + status.slice(1).toLowerCase()}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    ))}
+                                </View>
+
+                                <TouchableOpacity
+                                    onPress={() => setFilterVisible(false)}
+                                    className="bg-[#01B764] w-full py-4 rounded-full items-center shadow-lg"
+                                >
+                                    <Text className="text-white text-lg font-bold">Apply Filter</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </TouchableWithoutFeedback>
+                    </Pressable>
+                </View>
+            )}
 
             {loading && !refreshing ? (
                 <View className="flex-1 items-center justify-center">

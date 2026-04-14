@@ -1,6 +1,6 @@
 import ShieldFlashIcon from '@/components/Icons';
 import { getProfile, UserProfile } from '@/services/auth.service';
-import { getTransactions, getWalletBalance, Transaction, WalletInfo } from '@/services/wallet.service';
+import { getRecentTransactions, getWalletBalance, Transaction, WalletInfo } from '@/services/wallet.service';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Download } from 'lucide-react-native';
@@ -31,8 +31,15 @@ export default function WalletScreen() {
             setWalletInfo(balance);
             setUserProfile(profile);
 
-            const txResponse = await getTransactions(balance.accountNumber, 0, 5);
-            setTransactions(txResponse.content);
+            const recentTx = await getRecentTransactions(balance.accountNumber);
+            // Handle both flat array and paginated response just in case
+            if (Array.isArray(recentTx)) {
+                setTransactions(recentTx.slice(0, 5));
+            } else if (recentTx && recentTx.content) {
+                setTransactions(recentTx.content);
+            } else {
+                setTransactions([]);
+            }
         } catch (error) {
             console.error('Error fetching wallet data:', error);
         } finally {
@@ -170,6 +177,10 @@ export default function WalletScreen() {
                                     <Text className={`font-bold ${tx.type === 'CREDIT' ? 'text-[#01B764]' : 'text-[#F75555]'
                                         }`}>
                                         {tx.type === 'CREDIT' ? '+' : '-'} {formatCurrency(tx.amount)}
+                                    </Text>
+                                    <Text className={`text-[10px] ${tx.status === 'SUCCESSFUL' ? 'text-green-500' : 'text-orange-500'
+                                        }`}>
+                                        {tx.status}
                                     </Text>
                                 </View>
                             </TouchableOpacity>

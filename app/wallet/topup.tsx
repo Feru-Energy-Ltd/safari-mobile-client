@@ -13,7 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 
-const STATIC_AMOUNTS = [100, 500, 1000, 2000, 5000, 10000, 20000, 50000];
+const STATIC_AMOUNTS = [500, 1000, 2000, 5000, 10000, 20000, 30000, 50000];
 
 export default function TopUpScreen() {
     const [amount, setAmount] = useState('');
