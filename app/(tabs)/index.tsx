@@ -33,7 +33,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { calculateDistance } from '@/utils/location';
 
-const { width, height } = Dimensions.get('window');
+// const { width, height } = Dimensions.get('window');
 
 const darkMapStyle = [
   { "elementType": "geometry", "stylers": [{ "color": "#212121" }] },
@@ -82,6 +82,7 @@ export default function HomeScreen() {
   });
 
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  // const lastUpdateLocation = useRef<{ latitude: number; longitude: number } | null>(null);
 
 
   const distanceText = useMemo(() => {
@@ -95,24 +96,6 @@ export default function HomeScreen() {
     return dist < 1 ? `${(dist * 1000).toFixed(0)} m` : `${dist.toFixed(1)} km`;
   }, [selectedCharger, userLocation]);
 
-  // Pulse animation for User Avatar
-  const pulseValue = useSharedValue(1);
-
-  useEffect(() => {
-    pulseValue.value = withRepeat(
-      withSequence(
-        withTiming(1.5, { duration: 2000 }),
-        withTiming(1, { duration: 2000 })
-      ),
-      -1,
-      true
-    );
-  }, []);
-
-  const pulseStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: pulseValue.value }],
-    opacity: interpolate(pulseValue.value, [1, 1.5], [0.6, 0], Extrapolate.CLAMP),
-  }));
 
   // Fetch Profile & Chargers
   useEffect(() => {
@@ -161,36 +144,101 @@ export default function HomeScreen() {
   }, [searchQuery, chargers]);
 
   useEffect(() => {
-    (async () => {
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') return;
+    let subscription: Location.LocationSubscription | null = null;
 
-      let location = await Location.getCurrentPositionAsync({});
-      const newRegion = {
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-        latitudeDelta: 0.02,
-        longitudeDelta: 0.02,
-      };
-      setRegion(newRegion);
-      setUserLocation({ latitude: location.coords.latitude, longitude: location.coords.longitude });
-      mapRef.current?.animateToRegion(newRegion, 1000);
-    })();
+    const initLocation = async () => {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') return;
+
+        // One-time fetch for initial map centering
+        const location = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Highest,
+        });
+
+        const coords = {
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+        };
+
+        setUserLocation(coords);
+
+        const initialRegion = {
+          ...coords,
+          latitudeDelta: 0.02,
+          longitudeDelta: 0.02,
+        };
+        setRegion(initialRegion);
+        mapRef.current?.animateToRegion(initialRegion, 1000);
+
+        // Continuous high-accuracy tracking without native blue dot
+        subscription = await Location.watchPositionAsync(
+          {
+            accuracy: Location.Accuracy.Highest,
+            timeInterval: 1000,
+            distanceInterval: 1,
+          },
+          (loc) => {
+            setUserLocation({
+              latitude: loc.coords.latitude,
+              longitude: loc.coords.longitude,
+            });
+          }
+        );
+      } catch (error) {
+        console.error('Error in initial location setup:', error);
+      }
+    };
+
+    initLocation();
+
+    return () => {
+      if (subscription) {
+        subscription.remove();
+      }
+    };
   }, []);
 
   const locateUser = async () => {
-    let { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== 'granted') return;
+    if (userLocation) {
+      const newRegion = {
+        ...userLocation,
+        latitudeDelta: 0.015,
+        longitudeDelta: 0.015,
+      };
+      setRegion(newRegion);
+      mapRef.current?.animateToRegion(newRegion, 1000);
+    } else {
+      // Fallback to fresh fetch if userLocation isn't populated yet
+      try {
+        let { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          alert('Permission to access location was denied');
+          return;
+        }
 
-    let location = await Location.getCurrentPositionAsync({});
-    const newRegion = {
-      latitude: location.coords.latitude,
-      longitude: location.coords.longitude,
-      latitudeDelta: 0.015,
-      longitudeDelta: 0.015,
-    };
-    setUserLocation({ latitude: location.coords.latitude, longitude: location.coords.longitude });
-    mapRef.current?.animateToRegion(newRegion, 1000);
+        let location = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.High,
+        });
+
+        const coords = {
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+        };
+        setUserLocation(coords);
+
+        const newRegion = {
+          ...coords,
+          latitudeDelta: 0.015,
+          longitudeDelta: 0.015,
+        };
+        setRegion(newRegion);
+        mapRef.current?.animateToRegion(newRegion, 1000);
+      } catch (error) {
+        console.error('Error locating user:', error);
+        alert('Could not get your current location. Please make sure location services are enabled.');
+      }
+    }
   };
 
   const selectCharger = (charger: Charger) => {
@@ -209,6 +257,48 @@ export default function HomeScreen() {
     setViewMode('map');
     setIsDropdownVisible(false);
     Keyboard.dismiss();
+  };
+
+  const UserLocationMarker = ({ location }: { location: { latitude: number; longitude: number } }) => {
+    const pulseValue = useSharedValue(1);
+
+    useEffect(() => {
+      pulseValue.value = withRepeat(
+        withSequence(
+          withTiming(1.4, { duration: 1500 }),
+          withTiming(1, { duration: 1500 })
+        ),
+        -1,
+        true
+      );
+    }, []);
+
+    const pulseStyle = useAnimatedStyle(() => ({
+      transform: [{ scale: pulseValue.value }],
+      opacity: interpolate(pulseValue.value, [1, 1.4], [0.5, 0], Extrapolate.CLAMP),
+    }));
+
+    return (
+      <Marker
+        coordinate={location}
+        anchor={{ x: 0.5, y: 0.5 }}
+        tracksViewChanges={true}
+      >
+        <View className="items-center justify-center">
+          <Animated.View
+            style={[pulseStyle]}
+            className="absolute w-20 h-20 rounded-full bg-[#01B764]"
+          />
+          <View className="w-14 h-14 rounded-full border-2 border-white bg-[#01B764] shadow-xl items-center justify-center overflow-hidden">
+            {isLoadingProfile ? (
+              <ActivityIndicator size="small" color="white" />
+            ) : (
+              <Text className="text-white font-bold text-xl">{initials}</Text>
+            )}
+          </View>
+        </View>
+      </Marker>
+    );
   };
 
   const ChargerMarker = ({ charger }: { charger: Charger }) => {
@@ -281,21 +371,7 @@ export default function HomeScreen() {
             ))}
 
             {/* Custom User Marker */}
-            <Marker coordinate={{ latitude: region.latitude, longitude: region.longitude }}>
-              <View className="items-center justify-center">
-                <Animated.View
-                  style={[pulseStyle]}
-                  className="absolute w-16 h-16 rounded-full bg-[#01B764]"
-                />
-                <View className="w-11 h-11 rounded-full border-2 border-white bg-[#01B764] shadow-xl items-center justify-center overflow-hidden">
-                  {isLoadingProfile ? (
-                    <ActivityIndicator size="small" color="white" />
-                  ) : (
-                    <Text className="text-white font-bold text-lg">{initials}</Text>
-                  )}
-                </View>
-              </View>
-            </Marker>
+            {userLocation && <UserLocationMarker location={userLocation} />}
           </MapView>
 
           {/* Floating Action Buttons */}

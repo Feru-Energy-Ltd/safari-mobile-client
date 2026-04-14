@@ -64,7 +64,8 @@ export default function TransactionsScreen() {
         return transactions.filter(tx =>
             tx.type.toLowerCase().includes(lowQuery) ||
             tx.transactionId.toLowerCase().includes(lowQuery) ||
-            tx.status.toLowerCase().includes(lowQuery)
+            tx.status.toLowerCase().includes(lowQuery) ||
+            tx.amount.toLowerCase().includes(lowQuery)
         );
     }, [transactions, searchQuery]);
 
@@ -131,9 +132,6 @@ export default function TransactionsScreen() {
                     </TouchableOpacity>
                     <Text className="text-xl font-bold text-gray-900 dark:text-white">Recent Transactions</Text>
                 </View>
-                <TouchableOpacity className="p-2">
-                    <Search size={22} color="#01B764" />
-                </TouchableOpacity>
             </View>
 
             {/* Search Bar */}

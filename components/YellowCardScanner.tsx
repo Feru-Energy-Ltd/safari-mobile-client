@@ -1,5 +1,4 @@
 import { Ionicons } from '@expo/vector-icons';
-import { recognizeText } from '@infinitered/react-native-mlkit-text-recognition';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import React, { useEffect, useRef, useState } from 'react';
 import {
@@ -11,6 +10,15 @@ import {
     View,
 } from 'react-native';
 import { parseYellowCardText } from '../utils/yellowCardParser';
+
+// Safely require native module to prevent crash in Expo Go
+let recognizeText: any = null;
+try {
+    const MLKit = require('@infinitered/react-native-mlkit-text-recognition');
+    recognizeText = MLKit.recognizeText;
+} catch (e) {
+    console.warn('RNMLKitTextRecognition module not found (likely running in Expo Go)');
+}
 
 const { width, height } = Dimensions.get('window');
 
@@ -42,11 +50,20 @@ export default function YellowCardScanner({ visible, onClose, onScan, isDarkMode
                 base64: false,
             });
 
+            // Fallback check if native module is not linked (e.g. in Expo Go)
+            if (typeof recognizeText !== 'function') {
+                throw new Error('OCR native module not found. Please ensure you are using a Development/Preview build.');
+            }
+
             // Using Infinite Red's library API: recognizeText(uri)
             const result = await recognizeText(photo.uri);
 
+            if (!result || !result.blocks) {
+                throw new Error('OCR returned no results.');
+            }
+
             // The library returns an object with { text: string, blocks: [...] }
-            const textBlocks = result.blocks.map(block => block.text);
+            const textBlocks = result.blocks.map((block: any) => block.text);
 
             const { plateNumber, vinNumber } = parseYellowCardText(textBlocks);
 
