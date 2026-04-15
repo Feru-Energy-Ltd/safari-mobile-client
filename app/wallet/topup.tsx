@@ -18,15 +18,19 @@ const STATIC_AMOUNTS = [500, 1000, 2000, 5000, 10000, 20000, 30000, 50000];
 export default function TopUpScreen() {
     const [amount, setAmount] = useState('');
     const [loading, setLoading] = useState(false);
+    const [initialLoading, setInitialLoading] = useState(true);
     const [walletInfo, setWalletInfo] = useState<WalletInfo | null>(null);
 
     useEffect(() => {
         async function fetchWallet() {
+            setInitialLoading(true);
             try {
                 const info = await getWalletBalance();
                 setWalletInfo(info);
             } catch (error) {
                 console.error('Error fetching wallet info:', error);
+            } finally {
+                setInitialLoading(false);
             }
         }
         fetchWallet();
@@ -123,62 +127,68 @@ export default function TopUpScreen() {
                 <Text className="text-xl font-bold text-gray-900 dark:text-white">Top Up Wallet</Text>
             </View>
 
-            <ScrollView className="flex-1 px-6" showsVerticalScrollIndicator={false}>
-                <Text className="text-center text-gray-500 mt-8 mb-4">Enter the amount of top up</Text>
-
-                {/* Amount Input Display */}
-                <View className="border-2 border-[#01B764] rounded-3xl p-8 items-center mb-8">
-                    <Text className="text-4xl font-bold text-gray-900 dark:text-white">
-                        {formatCurrency(amount)}
-                    </Text>
+            {initialLoading ? (
+                <View className="flex-1 items-center justify-center">
+                    <ActivityIndicator size="large" color="#01B764" />
                 </View>
+            ) : (
+                <ScrollView className="flex-1 px-6" showsVerticalScrollIndicator={false}>
+                    <Text className="text-center text-gray-500 mt-8 mb-4">Enter the amount of top up</Text>
 
-                {/* Static Amounts Grid */}
-                <View className="flex-row flex-wrap justify-between mb-8">
-                    {STATIC_AMOUNTS.map((val) => (
-                        <TouchableOpacity
-                            key={val}
-                            onPress={() => handleAmountPress(val)}
-                            className={`w-[31%] py-3 mb-3 rounded-full border items-center ${amount === val.toString()
-                                ? 'bg-[#01B764] border-[#01B764]'
-                                : 'border-[#01B764]'
-                                }`}
-                        >
-                            <Text className={`font-bold ${amount === val.toString() ? 'text-white' : 'text-[#01B764]'
-                                }`}>
-                                RWF {val}
-                            </Text>
-                        </TouchableOpacity>
-                    ))}
-                </View>
+                    {/* Amount Input Display */}
+                    <View className="border-2 border-[#01B764] rounded-3xl p-8 items-center mb-8">
+                        <Text className="text-4xl font-bold text-gray-900 dark:text-white">
+                            {formatCurrency(amount)}
+                        </Text>
+                    </View>
 
-                {/* Continue Button */}
-                <TouchableOpacity
-                    onPress={handleContinue}
-                    disabled={loading || !amount}
-                    className={`bg-[#01B764] py-4 rounded-full items-center shadow-lg mb-8 ${(loading || !amount) ? 'opacity-50' : ''
-                        }`}
-                >
-                    {loading ? (
-                        <ActivityIndicator color="white" />
-                    ) : (
-                        <Text className="text-white font-bold text-lg">Continue</Text>
-                    )}
-                </TouchableOpacity>
+                    {/* Static Amounts Grid */}
+                    <View className="flex-row flex-wrap justify-between mb-8">
+                        {STATIC_AMOUNTS.map((val) => (
+                            <TouchableOpacity
+                                key={val}
+                                onPress={() => handleAmountPress(val)}
+                                className={`w-[31%] py-3 mb-3 rounded-full border items-center ${amount === val.toString()
+                                    ? 'bg-[#01B764] border-[#01B764]'
+                                    : 'border-[#01B764]'
+                                    }`}
+                            >
+                                <Text className={`font-bold ${amount === val.toString() ? 'text-white' : 'text-[#01B764]'
+                                    }`}>
+                                    RWF {val}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
 
-                {/* Custom Keypad */}
-                <View className="flex-row flex-wrap justify-center mb-10">
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
-                        <KeypadButton key={num} label={num.toString()} onPress={() => handleNumberPress(num.toString())} />
-                    ))}
-                    <KeypadButton label="*" onPress={() => { }} />
-                    <KeypadButton label="0" onPress={() => handleNumberPress('0')} />
-                    <KeypadButton
-                        onPress={handleDelete}
-                        icon={<Ionicons name="backspace-outline" size={32} color="#F75555" />}
-                    />
-                </View>
-            </ScrollView>
+                    {/* Continue Button */}
+                    <TouchableOpacity
+                        onPress={handleContinue}
+                        disabled={loading || !amount}
+                        className={`bg-[#01B764] py-4 rounded-full items-center shadow-lg mb-8 ${(loading || !amount) ? 'opacity-50' : ''
+                            }`}
+                    >
+                        {loading ? (
+                            <ActivityIndicator color="white" />
+                        ) : (
+                            <Text className="text-white font-bold text-lg">Continue</Text>
+                        )}
+                    </TouchableOpacity>
+
+                    {/* Custom Keypad */}
+                    <View className="flex-row flex-wrap justify-center mb-10">
+                        {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
+                            <KeypadButton key={num} label={num.toString()} onPress={() => handleNumberPress(num.toString())} />
+                        ))}
+                        <KeypadButton label="*" onPress={() => { }} />
+                        <KeypadButton label="0" onPress={() => handleNumberPress('0')} />
+                        <KeypadButton
+                            onPress={handleDelete}
+                            icon={<Ionicons name="backspace-outline" size={32} color="#F75555" />}
+                        />
+                    </View>
+                </ScrollView>
+            )}
         </SafeAreaView>
     );
 }

@@ -82,7 +82,6 @@ export default function HomeScreen() {
   });
 
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
-  // const lastUpdateLocation = useRef<{ latitude: number; longitude: number } | null>(null);
 
 
   const distanceText = useMemo(() => {

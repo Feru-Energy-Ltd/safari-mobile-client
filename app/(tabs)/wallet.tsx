@@ -1,3 +1,4 @@
+import { CustomAlert } from '@/components/CustomAlert';
 import ShieldFlashIcon from '@/components/Icons';
 import { getProfile, UserProfile } from '@/services/auth.service';
 import { getRecentTransactions, getWalletBalance, Transaction, WalletInfo } from '@/services/wallet.service';
@@ -21,6 +22,7 @@ export default function WalletScreen() {
     const [walletInfo, setWalletInfo] = useState<WalletInfo | null>(null);
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+    const [walletError, setWalletError] = useState<string | null>(null);
 
     const fetchData = async () => {
         try {
@@ -40,8 +42,13 @@ export default function WalletScreen() {
             } else {
                 setTransactions([]);
             }
-        } catch (error) {
-            console.error('Error fetching wallet data:', error);
+        } catch (error: any) {
+            console.log('Error fetching wallet data:', error.message);
+            if (error.message?.includes('No wallet found')) {
+                setWalletError('No wallet found');
+            } else {
+                console.error('Unexpected error fetching wallet data:', error);
+            }
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -100,7 +107,7 @@ export default function WalletScreen() {
                         <View className="flex-row justify-between items-start">
                             <View>
                                 <Text className="text-white text-lg font-semibold mb-1">
-                                    {userProfile ? `${userProfile.firstName} ${userProfile.lastName}` : 'User Name'}
+                                    {userProfile ? `${userProfile.firstName} ${userProfile.lastName}` : ''}
                                 </Text>
                                 <Text className="text-white/80 text-sm tracking-[4px]">
                                     {walletInfo?.accountNumber}
@@ -115,13 +122,15 @@ export default function WalletScreen() {
                                 <Text className="text-white text-4xl font-bold">
                                     {walletInfo ? formatCurrency(walletInfo.accountBalance) : 'RWF 0'}
                                 </Text>
-                                <TouchableOpacity
-                                    onPress={() => router.push('/wallet/topup')}
-                                    className="bg-white px-5 py-2.5 rounded-full flex-row items-center"
-                                >
-                                    <Download size={18} color="#01B764" className="mr-2 transform rotate-180" />
-                                    <Text className="text-[#01B764] font-bold">Top Up</Text>
-                                </TouchableOpacity>
+                                {!walletError && (
+                                    <TouchableOpacity
+                                        onPress={() => router.push('/wallet/topup')}
+                                        className="bg-white px-5 py-2.5 rounded-full flex-row items-center"
+                                    >
+                                        <Download size={18} color="#01B764" className="mr-2 transform rotate-180" />
+                                        <Text className="text-[#01B764] font-bold">Top Up</Text>
+                                    </TouchableOpacity>
+                                )}
                             </View>
                         </View>
                     </View>
@@ -131,13 +140,15 @@ export default function WalletScreen() {
                 <View className="px-6 mt-8 mb-8">
                     <View className="flex-row justify-between items-center mb-4">
                         <Text className="text-xl font-bold text-gray-900 dark:text-white">Recent Transactions</Text>
-                        <TouchableOpacity
-                            onPress={() => router.push('/wallet/transactions')}
-                            className="flex-row items-center"
-                        >
-                            <Text className="text-[#01B764] font-semibold mr-1">View All</Text>
-                            <Ionicons name="arrow-forward" size={18} color="#01B764" />
-                        </TouchableOpacity>
+                        {!walletError && transactions.length > 0 && (
+                            <TouchableOpacity
+                                onPress={() => router.push('/wallet/transactions')}
+                                className="flex-row items-center"
+                            >
+                                <Text className="text-[#01B764] font-semibold mr-1">View All</Text>
+                                <Ionicons name="arrow-forward" size={18} color="#01B764" />
+                            </TouchableOpacity>
+                        )}
                     </View>
 
                     {transactions.length > 0 ? (
@@ -192,6 +203,23 @@ export default function WalletScreen() {
                     )}
                 </View>
             </ScrollView>
-        </SafeAreaView>
+
+            <CustomAlert
+                visible={walletError === 'No wallet found'}
+                type="warning"
+                title="Wallet Not Found"
+                message="It looks like you don't have a wallet account yet. Please contact our support team to get started."
+                confirmText="Contact Support"
+                cancelText="Go Back"
+                onClose={() => {
+                    setWalletError(null);
+                    router.back();
+                }}
+                onConfirm={() => {
+                    // Logic for support contact could go here
+                    setWalletError(null);
+                }}
+            />
+        </SafeAreaView >
     );
 }
