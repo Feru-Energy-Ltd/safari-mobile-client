@@ -98,7 +98,7 @@ export default function YellowCardScanner({ visible, onClose, onScan, isDarkMode
                                 <TouchableOpacity onPress={onClose} style={styles.closeButton}>
                                     <Ionicons name="close" size={30} color="#FFF" />
                                 </TouchableOpacity>
-                                <Text style={styles.title}>Scan Yellow Card</Text>
+                                <Text style={styles.title}>Scan Card</Text>
                                 <View style={{ width: 30 }} />
                             </View>
 

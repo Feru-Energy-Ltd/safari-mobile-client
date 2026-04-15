@@ -231,7 +231,7 @@ export default function CreateVehicleScreen() {
                         }}
                     >
                         <Ionicons name="camera" size={20} color="#01B764" style={{ marginRight: 8 }} />
-                        <Text style={{ color: '#01B764', fontWeight: '700', fontSize: 15 }}>Scan Yellow Card</Text>
+                        <Text style={{ color: '#01B764', fontWeight: '700', fontSize: 15 }}>Scan Insurance or Yellow Card</Text>
                     </TouchableOpacity>
 
                     {renderInput('Plate Number', plateNumber, setPlateNumber, 'car-outline', 'e.g. RAA 445K')}
