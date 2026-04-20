@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
+import Toast from 'react-native-toast-message';
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 
@@ -138,6 +139,11 @@ export async function checkAuthStatus(): Promise<boolean> {
             return true;
         } catch (e) {
             await clearTokens();
+            Toast.show({
+                type: 'info',
+                text1: 'Session Expired',
+                text2: 'Please log in again to continue.'
+            });
             return false;
         }
     }
@@ -241,12 +247,22 @@ export async function authenticatedFetch<T>(url: string, options: RequestInit = 
             } catch (err) {
                 // If refresh fails, log out the user and redirect to login
                 await clearTokens();
+                Toast.show({
+                    type: 'info',
+                    text1: 'Session Expired',
+                    text2: 'Please log in again to continue.'
+                });
                 router.replace('/auth/login');
                 throw new Error('Your session has expired. Please log in again.');
             }
         } else {
             // No refresh token available
             await clearTokens();
+            Toast.show({
+                type: 'info',
+                text1: 'Session Expired',
+                text2: 'Please log in again to continue.'
+            });
             router.replace('/auth/login');
             throw new Error('Your session has expired. Please log in again.');
         }
