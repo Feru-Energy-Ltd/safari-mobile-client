@@ -7,7 +7,6 @@ import { Fuel, List, Map as MapIcon, Navigation2, Search, Target } from 'lucide-
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Dimensions,
   FlatList,
   Keyboard,
   Platform,
@@ -32,6 +31,7 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { calculateDistance } from '@/utils/location';
+import { logger } from '@/utils/logger';
 
 // const { width, height } = Dimensions.get('window');
 
@@ -112,7 +112,7 @@ export default function HomeScreen() {
           // zoom logic if needed
         }
       } catch (error) {
-        console.error('Failed to initialize home:', error);
+        logger.error('Failed to initialize home:', error);
       } finally {
         setIsLoadingProfile(false);
         setIsLoadingChargers(false);
@@ -185,7 +185,7 @@ export default function HomeScreen() {
           }
         );
       } catch (error) {
-        console.error('Error in initial location setup:', error);
+        logger.error('Error in initial location setup:', error);
       }
     };
 
@@ -234,7 +234,7 @@ export default function HomeScreen() {
         setRegion(newRegion);
         mapRef.current?.animateToRegion(newRegion, 1000);
       } catch (error) {
-        console.error('Error locating user:', error);
+        logger.error('Error locating user:', error);
         alert('Could not get your current location. Please make sure location services are enabled.');
       }
     }

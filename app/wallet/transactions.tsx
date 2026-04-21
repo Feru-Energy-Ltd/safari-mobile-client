@@ -1,5 +1,6 @@
 import { useColorScheme } from '@/components/useColorScheme.web';
 import { getTransactions, getWalletBalance, Transaction } from '@/services/wallet.service';
+import { logger } from '@/utils/logger';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Filter, Search } from 'lucide-react-native';
@@ -36,7 +37,7 @@ export default function TransactionsScreen() {
             const response = await getTransactions(accNum, 0, 100);
             setTransactions(response.content);
         } catch (error) {
-            console.error('Error fetching transactions:', error);
+            logger.error('Error fetching transactions:', error);
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -50,7 +51,7 @@ export default function TransactionsScreen() {
                 setUserAccountNumber(info.accountNumber);
                 fetchTransactions(info.accountNumber);
             } catch (error) {
-                console.error('Error initializing transactions screen:', error);
+                logger.error('Error initializing transactions screen:', error);
                 setLoading(false);
             }
         }

@@ -2,6 +2,7 @@ import { CustomAlert } from '@/components/CustomAlert';
 import ShieldFlashIcon from '@/components/Icons';
 import { getProfile, UserProfile } from '@/services/auth.service';
 import { getRecentTransactions, getWalletBalance, Transaction, WalletInfo } from '@/services/wallet.service';
+import { logger } from '@/utils/logger';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Download } from 'lucide-react-native';
@@ -43,11 +44,11 @@ export default function WalletScreen() {
                 setTransactions([]);
             }
         } catch (error: any) {
-            console.log('Error fetching wallet data:', error.message);
+            logger.info('Error fetching wallet data: ' + error.message);
             if (error.message?.includes('No wallet found')) {
                 setWalletError('No wallet found');
             } else {
-                console.error('Unexpected error fetching wallet data:', error);
+                logger.error('Unexpected error fetching wallet data:', error);
             }
         } finally {
             setLoading(false);
