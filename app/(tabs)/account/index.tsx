@@ -1,5 +1,7 @@
 import { AlertType, CustomAlert } from '@/components/CustomAlert';
+import ShieldFlashIcon from '@/components/Icons';
 import { getProfile, logout, UserProfile } from '@/services/auth.service';
+import { logger } from '@/utils/logger';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useColorScheme } from 'nativewind';
@@ -100,7 +102,7 @@ export default function AccountScreen() {
                 const data = await getProfile();
                 setProfile(data);
             } catch (error) {
-                console.error('Failed to fetch profile:', error);
+                logger.error('Failed to fetch profile:', error);
             } finally {
                 setIsLoading(false);
             }
@@ -153,9 +155,8 @@ export default function AccountScreen() {
             {/* Header */}
             <View style={styles.header}>
                 <View style={styles.headerLeft}>
-                    <View style={styles.headerIconContainer}>
-                        <Ionicons name="flash" size={16} color="white" />
-                    </View>
+                    <ShieldFlashIcon size={30} color="#01B764" />
+
                     <Text style={[styles.headerTitle, { color: isDarkMode ? '#FFFFFF' : '#1C1F26' }]}>
                         Account
                     </Text>

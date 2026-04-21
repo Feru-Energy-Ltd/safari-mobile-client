@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 
@@ -266,6 +267,15 @@ export async function login(payload: LoginRequest): Promise<AuthResponse> {
     });
     const data = await handleResponse<AuthResponse>(response);
     await saveTokens(data);
+
+    if (data.account) {
+        logger.setUser(data.account.accountId.toString(), payload.email, {
+            accountName: data.account.accountName,
+            accountType: data.account.accountType,
+            role: data.account.role
+        });
+    }
+
     return data;
 }
 
@@ -277,6 +287,15 @@ export async function selectContext(payload: { identityToken: string; contextId:
     });
     const data = await handleResponse<AuthResponse>(response);
     await saveTokens(data);
+
+    if (data.account) {
+        logger.setUser(data.account.accountId.toString(), undefined, {
+            accountName: data.account.accountName,
+            accountType: data.account.accountType,
+            role: data.account.role
+        });
+    }
+
     return data;
 }
 
@@ -288,6 +307,15 @@ export async function register(payload: RegisterRequest): Promise<AuthResponse> 
     });
     const data = await handleResponse<AuthResponse>(response);
     await saveTokens(data);
+
+    if (data.account) {
+        logger.setUser(data.account.accountId.toString(), payload.email, {
+            accountName: data.account.accountName,
+            accountType: data.account.accountType,
+            role: data.account.role
+        });
+    }
+
     return data;
 }
 
@@ -299,6 +327,15 @@ export async function refreshToken(token: string): Promise<AuthResponse> {
     });
     const data = await handleResponse<AuthResponse>(response);
     await saveTokens(data);
+
+    if (data.account) {
+        logger.setUser(data.account.accountId.toString(), undefined, {
+            accountName: data.account.accountName,
+            accountType: data.account.accountType,
+            role: data.account.role
+        });
+    }
+
     return data;
 }
 
@@ -311,10 +348,11 @@ export async function logout(): Promise<void> {
                 body: JSON.stringify({ refreshToken: refreshTkn }),
             });
         } catch (e) {
-            console.error('Logout request failed', e);
+            logger.error('Logout request failed', e);
         }
     }
     await clearTokens();
+    logger.clearUser();
 }
 
 export async function getProfile(): Promise<UserProfile> {

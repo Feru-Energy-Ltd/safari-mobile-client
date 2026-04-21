@@ -3,6 +3,7 @@ import { AlertType, CustomAlert } from '@/components/CustomAlert';
 import { useColorScheme } from '@/components/useColorScheme';
 import { login, selectContext } from '@/services/auth.service';
 import { getVehicles } from '@/services/vehicle.service';
+import { logger } from '@/utils/logger';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
@@ -56,7 +57,7 @@ export default function LoginScreen() {
         setIsLoading(true);
         try {
             const data = await login({ email, password });
-            // console.log("Login Response: ", data);
+            logger.info("Login Successful", { email });
 
             // Phase 2: Select Context
             const accounts = data.accounts || [];
@@ -93,7 +94,7 @@ export default function LoginScreen() {
                 if (vError?.message?.toLowerCase().includes('no vehicles found')) {
                     hasVehicles = false;
                 } else {
-                    console.error('Vehicle check failed:', vError);
+                    logger.error('Vehicle check failed:', vError);
                     // For other errors, fallback to tabs to avoid blocking the user
                     hasVehicles = true;
                 }
@@ -115,7 +116,7 @@ export default function LoginScreen() {
                 router.replace('/auth/add-vehicle');
             }
         } catch (error: any) {
-            // console.error('Login error:', error);
+            logger.error('Login error:', error);
             showAlert('error', error?.title || 'Login Failed', error?.message ?? 'Could not reach the server.');
         } finally {
             setIsLoading(false);
