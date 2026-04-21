@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 import { Ionicons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import React, { useEffect, useRef, useState } from 'react';
@@ -17,7 +18,7 @@ try {
     const MLKit = require('@infinitered/react-native-mlkit-text-recognition');
     recognizeText = MLKit.recognizeText;
 } catch (e) {
-    console.warn('RNMLKitTextRecognition module not found (likely running in Expo Go)');
+    logger.warn('RNMLKitTextRecognition module not found (likely running in Expo Go)');
 }
 
 const { width, height } = Dimensions.get('window');
@@ -74,7 +75,7 @@ export default function YellowCardScanner({ visible, onClose, onScan, isDarkMode
                 alert('Could not find Plate or VIN. Please ensure the card is well-lit and within the frame.');
             }
         } catch (error) {
-            console.error('Scanning error:', error);
+            logger.error('Scanning error:', error);
             alert('An error occurred while scanning. Please ensure you are using a Development Build, as OCR requires native modules.');
         } finally {
             setIsScanning(false);

@@ -1,5 +1,6 @@
 import { useColorScheme } from '@/components/useColorScheme.web';
 import { getWalletBalance, topUpWallet, WalletInfo } from '@/services/wallet.service';
+import { logger } from '@/utils/logger';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
@@ -28,7 +29,7 @@ export default function TopUpScreen() {
                 const info = await getWalletBalance();
                 setWalletInfo(info);
             } catch (error) {
-                console.error('Error fetching wallet info:', error);
+                logger.error('Error fetching wallet info:', error);
             } finally {
                 setInitialLoading(false);
             }

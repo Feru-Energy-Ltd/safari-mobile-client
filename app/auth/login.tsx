@@ -3,6 +3,7 @@ import { AlertType, CustomAlert } from '@/components/CustomAlert';
 import { useColorScheme } from '@/components/useColorScheme';
 import { login, selectContext } from '@/services/auth.service';
 import { getVehicles } from '@/services/vehicle.service';
+import { logger } from '@/utils/logger';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
@@ -51,6 +52,7 @@ export default function LoginScreen() {
         setIsLoading(true);
         try {
             const data = await login({ email: currentEmail, password: currentPassword });
+            logger.info("Login Successful", { email: currentEmail });
 
             // Phase 2: Select Context
             const accounts = data.accounts || [];
@@ -84,7 +86,7 @@ export default function LoginScreen() {
                 if (vError?.message?.toLowerCase().includes('no vehicles found')) {
                     hasVehicles = false;
                 } else {
-                    console.error('Vehicle check failed:', vError);
+                    logger.error('Vehicle check failed:', vError);
                     hasVehicles = true;
                 }
             }
@@ -95,6 +97,8 @@ export default function LoginScreen() {
                 text2: 'Welcome back to SafariCharger!',
                 position: 'top',
                 visibilityTime: 3000,
+                autoHide: true,
+                topOffset: 60,
             });
 
             if (hasVehicles) {
@@ -103,16 +107,13 @@ export default function LoginScreen() {
                 router.replace('/auth/add-vehicle');
             }
         } catch (error: any) {
+            logger.error('Login error:', error);
             showAlert('error', error?.title || 'Login Failed', error?.message ?? 'Could not reach the server.');
         } finally {
             setIsLoading(false);
         }
     };
 
-
-    const labelClasses = "text-[16px] font-semibold text-gray-900 dark:text-white mb-2";
-    const inputClasses = "flex-1 py-3 text-[16px] text-gray-900 dark:text-white";
-    const underlineClasses = "h-[1.5px] bg-[#01B764] mb-8";
 
     // Alert State
     const [alertConfig, setAlertConfig] = useState<{
@@ -130,6 +131,9 @@ export default function LoginScreen() {
     const showAlert = (type: AlertType, title: string, message: string) => {
         setAlertConfig({ visible: true, type, title, message });
     };
+    const labelClasses = "text-[16px] font-semibold text-gray-900 dark:text-white mb-2";
+    const inputClasses = "flex-1 py-3 text-[16px] text-gray-900 dark:text-white";
+    const underlineClasses = "h-[1.5px] bg-[#01B764] mb-8";
 
     return (
         <SafeAreaView className="flex-1 bg-white dark:bg-[#1C1F26]">

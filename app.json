@@ -43,7 +43,15 @@
       "expo-router",
       "expo-font",
       "expo-web-browser",
-      "expo-camera"
+      "expo-camera",
+      [
+        "@sentry/react-native/expo",
+        {
+          "url": "https://sentry.io/",
+          "project": "safari-mobile",
+          "organization": "feru-energy-ltd"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

@@ -2,6 +2,7 @@ import { Button } from '@/components/Button';
 import { useColorScheme } from '@/components/useColorScheme';
 import { Account, selectContext } from '@/services/auth.service';
 import { getVehicles } from '@/services/vehicle.service';
+import { logger } from '@/utils/logger';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
@@ -50,7 +51,7 @@ export default function SelectAccountScreen() {
                 if (vError?.message?.toLowerCase().includes('no vehicles found')) {
                     hasVehicles = false;
                 } else {
-                    console.error('Vehicle check failed:', vError);
+                    logger.error('Vehicle check failed:', vError);
                     hasVehicles = true;
                 }
             }
