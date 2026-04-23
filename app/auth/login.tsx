@@ -108,6 +108,13 @@ export default function LoginScreen() {
             }
         } catch (error: any) {
             logger.error('Login error:', error);
+            if (error?.message?.includes('Account is disabled') || error?.message?.includes('Account Disabled')) {
+                router.push({
+                    pathname: '/auth/verify-otp' as any,
+                    params: { email: currentEmail }
+                });
+                return;
+            }
             showAlert('error', error?.title || 'Login Failed', error?.message ?? 'Could not reach the server.');
         } finally {
             setIsLoading(false);

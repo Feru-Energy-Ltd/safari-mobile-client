@@ -1,8 +1,12 @@
+import { CustomAlert } from '@/components/CustomAlert';
 import { useColorScheme } from '@/components/useColorScheme';
 import { getProfile, UserProfile } from '@/services/auth.service';
 import { cancelReservation, getActiveReservation, Reservation } from '@/services/charger.service';
+import { getWalletBalance } from '@/services/wallet.service';
+import { logger } from '@/utils/logger';
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { Battery, Clock, Fuel, RefreshCcw, XCircle } from 'lucide-react-native';
+import { Fuel } from 'lucide-react-native';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -24,19 +28,32 @@ export default function ChargingScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
+  const [elapsedTime, setElapsedTime] = useState('00:00:00');
+  const [isAlertVisible, setIsAlertVisible] = useState(false);
 
   const fetchData = useCallback(async (showLoading = true) => {
     if (showLoading) setIsLoading(true);
     try {
-      const userProfile = await getProfile();
+      const [userProfile, walletInfo] = await Promise.all([
+        getProfile(),
+        getWalletBalance()
+      ]);
       setProfile(userProfile);
 
-      if (userProfile && userProfile.phone) {
-        const reservation = await getActiveReservation(userProfile.phone);
+      logger.info('ChargingScreen: Profile and Wallet fetched', {
+        hasProfile: !!userProfile,
+        accountNumber: walletInfo?.accountNumber
+      });
+
+      if (walletInfo && walletInfo.accountNumber) {
+        const reservation = await getActiveReservation(walletInfo.accountNumber);
+        logger.info('ChargingScreen: Active reservation fetch result', { hasReservation: !!reservation });
         setActiveReservation(reservation);
+      } else {
+        logger.warn('ChargingScreen: No wallet accountNumber found', { walletInfo });
       }
-    } catch (error) {
-      // console.error('Failed to fetch charging data:', error);
+    } catch (error: any) {
+      logger.error('ChargingScreen: fetchData failed', { error: error.message });
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -47,14 +64,43 @@ export default function ChargingScreen() {
     fetchData();
   }, [fetchData]);
 
+  useEffect(() => {
+    if (!activeReservation?.expiryDateTime) return;
+
+    const interval = setInterval(() => {
+      const expiry = new Date(activeReservation.expiryDateTime).getTime();
+      const now = new Date().getTime();
+      const diff = Math.max(0, expiry - now);
+
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+      setElapsedTime(
+        `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+      );
+
+      if (diff === 0) {
+        clearInterval(interval);
+        fetchData(false); // Refresh to see if it's gone or updated
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [activeReservation?.expiryDateTime]);
+
   const onRefresh = () => {
     setIsRefreshing(true);
     fetchData(false);
   };
 
+  const handleCancelClick = () => {
+    setIsAlertVisible(true);
+  };
+
   const handleCancel = async () => {
     if (!activeReservation) return;
-
+    setIsAlertVisible(false);
     setIsCancelling(true);
     try {
       const res = await cancelReservation(activeReservation.chargeBoxId, activeReservation.connectorId);
@@ -120,73 +166,91 @@ export default function ChargingScreen() {
             </TouchableOpacity>
           </View>
         ) : (
-          <View>
-            <View className="bg-white dark:bg-[#2A2D35] rounded-[40px] p-8 border border-gray-100 dark:border-gray-800 shadow-sm mb-6">
-              <View className="flex-row items-center justify-between mb-8">
-                <View className="bg-[#01B764]/10 px-4 py-2 rounded-full">
-                  <Text className="text-[#01B764] font-bold text-xs uppercase">{activeReservation.status}</Text>
+          <View className="flex-1">
+            <View className="items-center mb-10 pt-4">
+              {/* Premium Circle Battery Indicator */}
+              <View className="w-64 h-64 rounded-full border-[6px] border-[#01B764] items-center justify-center bg-white dark:bg-[#1C1F26] shadow-2xl shadow-[#01B764]/20 relative">
+                {/* Lightning Icon */}
+                <View className="mb-2">
+                  <Ionicons name="flash" size={32} color="#FACC15" />
                 </View>
-                <TouchableOpacity onPress={onRefresh}>
-                  <RefreshCcw size={20} color="#01B764" />
-                </TouchableOpacity>
+
+                {/* Energy Large text */}
+                <View className="flex-row items-baseline">
+                  <Text className="text-6xl font-black text-gray-900 dark:text-white">{activeReservation.batteryLevel}</Text>
+                  <Text className="text-2xl font-bold text-gray-500 dark:text-gray-400 ml-1">%</Text>
+                </View>
+
+                <Text className="text-gray-400 dark:text-gray-500 font-bold tracking-widest text-sm mt-1 uppercase">Battery</Text>
+
+                {/* Glow effect */}
+                <View className="absolute inset-0 rounded-full border-[1px] border-[#01B764]/30 scale-110 opacity-50" />
+              </View>
+            </View>
+
+            {/* Information Grid Container */}
+            <View className="bg-white dark:bg-[#2A2D35] rounded-[32px] p-1 border border-gray-100 dark:border-gray-800 shadow-sm mb-10">
+              {/* Grid 2x2 */}
+              <View className="flex-row border-b border-gray-100 dark:border-gray-800">
+                {/* Item 1: Charging Time */}
+                <View className="flex-1 p-6 items-center border-r border-gray-100 dark:border-gray-800">
+                  <Text className="text-lg font-black text-gray-900 dark:text-white mb-1">{elapsedTime}</Text>
+                  <Text className="text-gray-400 dark:text-gray-500 text-xs font-bold uppercase">Reservation Time</Text>
+                </View>
+
+                {/* Item 2: Battery */}
+                <View className="flex-1 p-6 items-center">
+                  <Text className="text-lg font-black text-gray-900 dark:text-white mb-1">{activeReservation.batteryCapacity} kWh</Text>
+                  <Text className="text-gray-400 dark:text-gray-500 text-xs font-bold uppercase">Battery Capacity</Text>
+                </View>
               </View>
 
-              <View className="items-center mb-8">
-                <View className="w-40 h-40 rounded-full border-[10px] border-[#01B764] items-center justify-center">
-                  <Text className="text-4xl font-bold text-gray-900 dark:text-white">{activeReservation.batteryLevel}%</Text>
-                  <Text className="text-gray-500 dark:text-gray-400 text-xs font-medium mt-1">BATTERY LEVEL</Text>
-                </View>
-              </View>
-
-              <View className="space-y-6">
-                <View className="flex-row items-center">
-                  <View className="w-12 h-12 bg-gray-50 dark:bg-gray-800 rounded-2xl items-center justify-center mr-4">
-                    <Fuel size={24} color="#01B764" />
-                  </View>
-                  <View className="flex-1">
-                    <Text className="text-gray-500 dark:text-gray-400 text-xs font-medium uppercase mb-0.5">Charger ID</Text>
-                    <Text className="text-lg font-bold text-gray-900 dark:text-white">{activeReservation.chargeBoxId}</Text>
-                  </View>
+              <View className="flex-row">
+                {/* Item 3: Station (ChargeBox + Connector) */}
+                <View className="flex-1 p-6 items-center border-r border-gray-100 dark:border-gray-800">
+                  <Text className="text-sm font-black text-gray-900 dark:text-white mb-1 text-center" numberOfLines={1}>
+                    {activeReservation.chargeBoxId}
+                  </Text>
+                  <Text className="text-gray-400 dark:text-gray-500 text-[10px] font-bold uppercase text-center">
+                    {activeReservation.connectorType}
+                  </Text>
                 </View>
 
-                <View className="flex-row items-center">
-                  <View className="w-12 h-12 bg-gray-50 dark:bg-gray-800 rounded-2xl items-center justify-center mr-4">
-                    <Clock size={24} color="#01B764" />
-                  </View>
-                  <View className="flex-1">
-                    <Text className="text-gray-500 dark:text-gray-400 text-xs font-medium uppercase mb-0.5">Expires At</Text>
-                    <Text className="text-lg font-bold text-gray-900 dark:text-white">
-                      {new Date(activeReservation.expiryDateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </Text>
-                  </View>
-                </View>
-
-                <View className="flex-row items-center">
-                  <View className="w-12 h-12 bg-gray-50 dark:bg-gray-800 rounded-2xl items-center justify-center mr-4">
-                    <Battery size={24} color="#01B764" />
-                  </View>
-                  <View className="flex-1">
-                    <Text className="text-gray-500 dark:text-gray-400 text-xs font-medium uppercase mb-0.5">Amount Charged</Text>
-                    <Text className="text-lg font-bold text-gray-900 dark:text-white">RWF {activeReservation.reservationAmount}</Text>
-                  </View>
+                {/* Item 4: Total Fees */}
+                <View className="flex-1 p-6 items-center">
+                  <Text className="text-lg font-black text-[#01B764] mb-1">RWF {activeReservation.reservationAmount?.toLocaleString()}</Text>
+                  <Text className="text-gray-400 dark:text-gray-500 text-xs font-bold uppercase">Total Fees</Text>
                 </View>
               </View>
             </View>
 
+            {/* Action Button */}
             <TouchableOpacity
-              onPress={handleCancel}
+              onPress={handleCancelClick}
               disabled={isCancelling}
-              className="flex-row items-center justify-center h-16 bg-[#F75555]/10 rounded-2xl border border-[#F75555]/20"
+              className="h-16 bg-[#F75555] rounded-3xl items-center justify-center flex-row shadow-lg shadow-[#F75555]/30 mb-8"
             >
               {isCancelling ? (
-                <ActivityIndicator color="#F75555" />
+                <ActivityIndicator color="white" />
               ) : (
                 <>
-                  <XCircle size={20} color="#F75555" />
-                  <Text className="text-[#F75555] font-bold text-lg ml-2">Cancel Reservation</Text>
+                  <Ionicons name="close-circle" size={24} color="white" />
+                  <Text className="text-white font-black text-lg ml-2">Cancel Reservation</Text>
                 </>
               )}
             </TouchableOpacity>
+
+            {/* Custom confirmation alert */}
+            <CustomAlert
+              visible={isAlertVisible}
+              type="confirm"
+              title="Cancel Reservation?"
+              message="Are you sure you want to cancel your current reservation?"
+              confirmText="Confirm"
+              cancelText="Cancel"
+              onClose={() => setIsAlertVisible(false)}
+              onConfirm={handleCancel}
+            />
           </View>
         )}
       </ScrollView>

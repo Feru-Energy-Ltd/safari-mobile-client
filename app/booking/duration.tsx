@@ -9,6 +9,7 @@ import {
     Modal,
     ScrollView,
     Text,
+    TextInput,
     TouchableOpacity,
     View
 } from 'react-native';
@@ -57,9 +58,9 @@ export default function DurationSelectionScreen() {
     const isDarkMode = colorScheme === 'dark';
 
     const [selectedDuration, setSelectedDuration] = useState(30);
-    const [arrivalTime, setArrivalTime] = useState('10:00 AM');
+    const [batteryLevel, setBatteryLevel] = useState('40');
 
-    const [showTimePicker, setShowTimePicker] = useState(false);
+    const [showBatteryPicker, setShowBatteryPicker] = useState(false);
     const [showDurationPicker, setShowDurationPicker] = useState(false);
 
     const today = new Date();
@@ -68,9 +69,7 @@ export default function DurationSelectionScreen() {
     ];
 
     const durations = [15, 20, 25, 30, 35, 40, 45];
-    const hours = Array.from({ length: 12 }, (_, i) => (i + 1).toString());
-    const minutes = Array.from({ length: 12 }, (_, i) => (i * 5).toString().padStart(2, '0'));
-    const periods = ['AM', 'PM'];
+    const batteryLevels = Array.from({ length: 20 }, (_, i) => (i + 1) * 5); // 5% to 100%
 
     const handleContinue = () => {
         router.push({
@@ -78,7 +77,7 @@ export default function DurationSelectionScreen() {
             params: {
                 ...params,
                 reservationDuration: selectedDuration.toString(),
-                arrivalTime: arrivalTime
+                currentBatteryLevel: batteryLevel.toString()
             }
         });
     };
@@ -144,17 +143,24 @@ export default function DurationSelectionScreen() {
                 <Text className="text-base font-bold text-gray-900 dark:text-white mb-4">Select Date</Text>
                 {renderCalendar()}
 
-                <Text className="text-base font-bold text-gray-900 dark:text-white mt-8 mb-4">Select Arrival Time</Text>
-                <TouchableOpacity
-                    onPress={() => setShowTimePicker(true)}
-                    className="flex-row items-center justify-between bg-white dark:bg-[#2A2D35] border-b border-[#01B764] p-4"
-                >
-                    <Text className="text-lg font-medium text-gray-900 dark:text-white">{arrivalTime}</Text>
-                    <View className="flex-row items-center">
-                        <Text className="text-[#01B764] font-bold mr-2">{arrivalTime.split(' ')[1]}</Text>
-                        <ChevronDown size={20} color={isDarkMode ? '#858E92' : '#9E9E9E'} />
-                    </View>
-                </TouchableOpacity>
+                <Text className="text-base font-bold text-gray-900 dark:text-white mt-8 mb-4">Current Battery Level</Text>
+                <View className="flex-row items-center bg-white dark:bg-[#2A2D35] border-b border-[#01B764] p-4">
+                    <TextInput
+                        className="flex-1 text-lg font-medium text-gray-900 dark:text-white"
+                        value={batteryLevel}
+                        onChangeText={(val: string) => {
+                            const numericVal = val.replace(/[^0-9]/g, '');
+                            if (numericVal === '' || (parseInt(numericVal) <= 100)) {
+                                setBatteryLevel(numericVal);
+                            }
+                        }}
+                        // placeholder="40"
+                        placeholderTextColor="#9CA3AF"
+                        keyboardType="numeric"
+                        maxLength={3}
+                    />
+                    <Text className="text-[#01B764] font-bold text-lg">%</Text>
+                </View>
 
                 <Text className="text-base font-bold text-gray-900 dark:text-white mt-8 mb-4">Select Charging Duration</Text>
                 <TouchableOpacity
@@ -180,74 +186,6 @@ export default function DurationSelectionScreen() {
                 </TouchableOpacity>
             </View>
 
-            {/* Time Picker Modal */}
-            <BottomSheetModal
-                visible={showTimePicker}
-                onClose={() => setShowTimePicker(false)}
-                title="Arrival Time"
-            >
-                <View className="flex-row h-48">
-                    <FlatList
-                        data={hours}
-                        keyExtractor={item => item}
-                        showsVerticalScrollIndicator={false}
-                        snapToInterval={40}
-                        decelerationRate="fast"
-                        className="flex-1"
-                        renderItem={({ item }) => (
-                            <TouchableOpacity
-                                onPress={() => {
-                                    const parts = arrivalTime.split(/[: ]/);
-                                    setArrivalTime(`${item}:${parts[1]} ${parts[2]}`);
-                                }}
-                                className="h-10 items-center justify-center"
-                            >
-                                <Text className={`text-xl font-bold ${arrivalTime.split(':')[0] === item ? 'text-[#01B764]' : 'text-gray-400'}`}>
-                                    {item}
-                                </Text>
-                            </TouchableOpacity>
-                        )}
-                    />
-                    <FlatList
-                        data={minutes}
-                        keyExtractor={item => item}
-                        showsVerticalScrollIndicator={false}
-                        snapToInterval={40}
-                        decelerationRate="fast"
-                        className="flex-1"
-                        renderItem={({ item }) => (
-                            <TouchableOpacity
-                                onPress={() => {
-                                    const parts = arrivalTime.split(/[: ]/);
-                                    setArrivalTime(`${parts[0]}:${item} ${parts[2]}`);
-                                }}
-                                className="h-10 items-center justify-center"
-                            >
-                                <Text className={`text-xl font-bold ${arrivalTime.split(/[: ]/)[1] === item ? 'text-[#01B764]' : 'text-gray-400'}`}>
-                                    {item}
-                                </Text>
-                            </TouchableOpacity>
-                        )}
-                    />
-                    <View className="flex-1">
-                        {periods.map(p => (
-                            <TouchableOpacity
-                                key={p}
-                                onPress={() => {
-                                    const parts = arrivalTime.split(/[: ]/);
-                                    setArrivalTime(`${parts[0]}:${parts[1]} ${p}`);
-                                }}
-                                className="h-[96px] items-center justify-center"
-                            >
-                                <Text className={`text-xl font-bold ${arrivalTime.split(' ')[1] === p ? 'text-[#01B764]' : 'text-gray-400'}`}>
-                                    {p}
-                                </Text>
-                            </TouchableOpacity>
-                        ))}
-                    </View>
-                </View>
-            </BottomSheetModal>
-
             {/* Duration Picker Modal */}
             <BottomSheetModal
                 visible={showDurationPicker}
@@ -261,7 +199,10 @@ export default function DurationSelectionScreen() {
                     className="h-48"
                     renderItem={({ item }) => (
                         <TouchableOpacity
-                            onPress={() => setSelectedDuration(item)}
+                            onPress={() => {
+                                setSelectedDuration(item);
+                                setShowDurationPicker(false);
+                            }}
                             className="h-12 items-center justify-center border-b border-gray-50 dark:border-gray-800"
                         >
                             <Text className={`text-xl font-bold ${selectedDuration === item ? 'text-[#01B764]' : 'text-gray-400'}`}>

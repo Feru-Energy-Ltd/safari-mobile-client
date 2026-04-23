@@ -217,6 +217,8 @@ export default function AccountScreen() {
                     <SettingsItem icon="car-outline" title="My Vehicle" onPress={() => router.push('/account/my-vehicles')} />
                     <View style={[styles.inlineDivider, { backgroundColor: dividerColor }]} />
                     <SettingsItem icon="card-outline" title="Payment Methods" />
+                    <View style={[styles.inlineDivider, { backgroundColor: dividerColor }]} />
+                    <SettingsItem icon="calendar-outline" title="My Bookings" onPress={() => router.push('/account/bookings')} />
                 </View>
 
                 <View style={[styles.sectionDivider, { backgroundColor: dividerColor }]} />

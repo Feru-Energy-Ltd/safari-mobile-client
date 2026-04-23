@@ -10,8 +10,8 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
-import Toast from 'react-native-toast-message';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Toast from 'react-native-toast-message';
 
 export default function ReviewBookingScreen() {
     const params = useLocalSearchParams();
@@ -25,7 +25,7 @@ export default function ReviewBookingScreen() {
         connectorId,
         plateNumber,
         reservationDuration,
-        arrivalTime
+        currentBatteryLevel
     } = params;
 
     const handleConfirm = async () => {
@@ -35,7 +35,7 @@ export default function ReviewBookingScreen() {
                 chargeBoxId: chargeBoxId as string,
                 connectorId: parseInt(connectorId as string),
                 plateNumber: plateNumber as string,
-                currentBatteryLevel: 40, // Mocked for now, could be passed from state
+                currentBatteryLevel: parseInt(currentBatteryLevel as string || '40'),
                 reservationDuration: parseInt(reservationDuration as string)
             };
 
@@ -108,7 +108,7 @@ export default function ReviewBookingScreen() {
                             <Text className="text-base font-bold text-gray-900 dark:text-white" numberOfLines={1}>
                                 {chargeBoxId}
                             </Text>
-                            <Text className="text-sm text-gray-500 dark:text-gray-400">Connector {connectorId} • {arrivalTime || '10:00 AM'}</Text>
+                            <Text className="text-sm text-gray-500 dark:text-gray-400">Connector {connectorId} • {currentBatteryLevel}% Battery</Text>
                         </View>
                     </View>
                 </View>

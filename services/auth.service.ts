@@ -63,6 +63,15 @@ export interface UserProfile {
     createdAt: string;
 }
 
+export interface VerifyOtpRequest {
+    email: string;
+    otp: string;
+}
+
+export interface ResendOtpRequest {
+    email: string;
+}
+
 
 // ---------- Token Helpers ----------
 
@@ -387,4 +396,22 @@ export async function changePassword(payload: { oldPassword: string; newPassword
         method: 'POST',
         body: JSON.stringify(payload),
     });
+}
+
+export async function verifyOtp(payload: VerifyOtpRequest): Promise<{ message: string }> {
+    const response = await fetch(`${BASE_URL}/auth/verify-otp`, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify(payload),
+    });
+    return handleResponse<{ message: string }>(response);
+}
+
+export async function resendOtp(payload: ResendOtpRequest): Promise<{ message: string }> {
+    const response = await fetch(`${BASE_URL}/auth/resend-otp`, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify(payload),
+    });
+    return handleResponse<{ message: string }>(response);
 }
