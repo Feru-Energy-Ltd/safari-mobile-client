@@ -58,7 +58,7 @@ export default function DurationSelectionScreen() {
     const isDarkMode = colorScheme === 'dark';
 
     const [selectedDuration, setSelectedDuration] = useState(30);
-    const [batteryLevel, setBatteryLevel] = useState('40');
+    const [batteryLevel, setBatteryLevel] = useState('');
 
     const [showBatteryPicker, setShowBatteryPicker] = useState(false);
     const [showDurationPicker, setShowDurationPicker] = useState(false);
@@ -154,7 +154,7 @@ export default function DurationSelectionScreen() {
                                 setBatteryLevel(numericVal);
                             }
                         }}
-                        // placeholder="40"
+                        // placeholder="00"
                         placeholderTextColor="#9CA3AF"
                         keyboardType="numeric"
                         maxLength={3}

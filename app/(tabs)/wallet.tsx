@@ -1,4 +1,3 @@
-import { CustomAlert } from '@/components/CustomAlert';
 import ShieldFlashIcon from '@/components/Icons';
 import { getProfile, UserProfile } from '@/services/auth.service';
 import { getRecentTransactions, getWalletBalance, Transaction, WalletInfo } from '@/services/wallet.service';
@@ -35,21 +34,17 @@ export default function WalletScreen() {
             setUserProfile(profile);
 
             const recentTx = await getRecentTransactions(balance.accountNumber);
-            // Handle both flat array and paginated response just in case
+            // Handle both flat array and paginated response
             if (Array.isArray(recentTx)) {
                 setTransactions(recentTx.slice(0, 5));
-            } else if (recentTx && recentTx.content) {
-                setTransactions(recentTx.content);
+            } else if (recentTx && (recentTx as any).content) {
+                setTransactions((recentTx as any).content);
             } else {
                 setTransactions([]);
             }
         } catch (error: any) {
-            logger.info('Error fetching wallet data: ' + error.message);
-            if (error.message?.includes('No wallet found')) {
-                setWalletError('No wallet found');
-            } else {
-                logger.error('Unexpected error fetching wallet data:', error);
-            }
+            logger.error('Error fetching wallet data:', error);
+            setWalletError(error.message || 'Could not fetch wallet data.');
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -82,6 +77,12 @@ export default function WalletScreen() {
         }).format(value);
     };
 
+    const formatTxDate = (arr?: number[]) => {
+        if (!arr || arr.length < 6) return new Date();
+        const [year, month, day, hour, minute, second] = arr;
+        return new Date(year, month - 1, day, hour, minute, second);
+    };
+
     return (
         <SafeAreaView className="flex-1 bg-white dark:bg-[#1C1F26]">
             {/* Header */}
@@ -110,7 +111,7 @@ export default function WalletScreen() {
                                 <Text className="text-white text-lg font-semibold mb-1">
                                     {userProfile ? `${userProfile.firstName} ${userProfile.lastName}` : ''}
                                 </Text>
-                                <Text className="text-white/80 text-sm tracking-[4px]">
+                                <Text className="text-white/80 text-base font-mono">
                                     {walletInfo?.accountNumber}
                                 </Text>
                             </View>
@@ -123,15 +124,13 @@ export default function WalletScreen() {
                                 <Text className="text-white text-4xl font-bold">
                                     {walletInfo ? formatCurrency(walletInfo.accountBalance) : 'RWF 0'}
                                 </Text>
-                                {!walletError && (
-                                    <TouchableOpacity
-                                        onPress={() => router.push('/wallet/topup')}
-                                        className="bg-white px-5 py-2.5 rounded-full flex-row items-center"
-                                    >
-                                        <Download size={18} color="#01B764" className="mr-2 transform rotate-180" />
-                                        <Text className="text-[#01B764] font-bold">Top Up</Text>
-                                    </TouchableOpacity>
-                                )}
+                                <TouchableOpacity
+                                    onPress={() => router.push('/wallet/topup')}
+                                    className="bg-white px-5 py-2.5 rounded-full flex-row items-center"
+                                >
+                                    <Download size={18} color="#01B764" className="mr-2 transform rotate-180" />
+                                    <Text className="text-[#01B764] font-bold">Top Up</Text>
+                                </TouchableOpacity>
                             </View>
                         </View>
                     </View>
@@ -155,42 +154,42 @@ export default function WalletScreen() {
                     {transactions.length > 0 ? (
                         transactions.map((tx, index) => (
                             <TouchableOpacity
-                                key={tx.transactionId || index}
+                                key={tx.id || index}
                                 className="bg-white dark:bg-[#252932] mb-4 p-4 rounded-3xl flex-row items-center border border-gray-100 dark:border-gray-800 shadow-sm"
                             >
-                                <View className={`w-12 h-12 rounded-full items-center justify-center mr-4 ${tx.type === 'CREDIT' ? 'bg-green-50 dark:bg-green-900/20' : 'bg-red-50 dark:bg-red-900/20'
+                                <View className={`w-12 h-12 rounded-full items-center justify-center mr-4 ${tx.type === 'CREDIT' || tx.type === 'REFUND' ? 'bg-green-50 dark:bg-green-900/20' : 'bg-red-50 dark:bg-red-900/20'
                                     }`}>
                                     <Ionicons
-                                        name={tx.type === 'CREDIT' ? 'arrow-down' : 'arrow-up'}
+                                        name={tx.type === 'CREDIT' || tx.type === 'REFUND' ? 'arrow-down' : 'arrow-up'}
                                         size={20}
-                                        color={tx.type === 'CREDIT' ? '#01B764' : '#F75555'}
+                                        color={tx.type === 'CREDIT' || tx.type === 'REFUND' ? '#01B764' : '#F75555'}
                                     />
                                 </View>
 
                                 <View className="flex-1">
                                     <View className="flex-row items-center mb-1">
-                                        <View className={`px-2 py-0.5 rounded-md mr-2 ${tx.type === 'CREDIT' ? 'border border-green-500' : 'border border-red-500'
+                                        <View className={`px-2 py-0.5 rounded-md mr-2 ${tx.type === 'CREDIT' || tx.type === 'REFUND' ? 'border border-green-500' : 'border border-red-500'
                                             }`}>
-                                            <Text className={`text-[10px] font-bold ${tx.type === 'CREDIT' ? 'text-green-500' : 'text-red-500'
+                                            <Text className={`text-[10px] font-bold ${tx.type === 'CREDIT' || tx.type === 'REFUND' ? 'text-green-500' : 'text-red-500'
                                                 }`}>
-                                                {tx.type === 'CREDIT' ? 'Topup' : 'Paid'}
+                                                {tx.type === 'CREDIT' ? 'Topup' : tx.type === 'REFUND' ? 'Refund' : 'Paid'}
                                             </Text>
                                         </View>
                                         <Text className="font-bold text-gray-900 dark:text-white flex-1" numberOfLines={1}>
-                                            {tx.type === 'CREDIT' ? 'Top Up Wallet' : 'Charging Service'}
+                                            {tx.type === 'CREDIT' ? 'Top Up Wallet' : tx.type === 'REFUND' ? 'Refund' : 'Charging Service'}
                                         </Text>
                                     </View>
                                     <Text className="text-xs text-gray-500 dark:text-gray-400">
-                                        {new Date(tx.transactionDate).toLocaleDateString()} • {new Date(tx.transactionDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        {formatTxDate(tx.createdAt).toLocaleDateString()} • {formatTxDate(tx.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                     </Text>
                                 </View>
 
                                 <View className="items-end">
-                                    <Text className={`font-bold ${tx.type === 'CREDIT' ? 'text-[#01B764]' : 'text-[#F75555]'
+                                    <Text className={`font-bold ${tx.type === 'CREDIT' || tx.type === 'REFUND' ? 'text-[#01B764]' : 'text-[#F75555]'
                                         }`}>
-                                        {tx.type === 'CREDIT' ? '+' : '-'} {formatCurrency(tx.amount)}
+                                        {tx.type === 'CREDIT' || tx.type === 'REFUND' ? '+' : '-'} {formatCurrency(tx.transactedAmount)}
                                     </Text>
-                                    <Text className={`text-[10px] ${tx.status === 'SUCCESSFUL' ? 'text-green-500' : 'text-orange-500'
+                                    <Text className={`text-[10px] ${tx.status === 'SUCCESSFUL' || tx.status === 'COMPLETED' ? 'text-green-500' : 'text-orange-500'
                                         }`}>
                                         {tx.status}
                                     </Text>
@@ -205,22 +204,6 @@ export default function WalletScreen() {
                 </View>
             </ScrollView>
 
-            <CustomAlert
-                visible={walletError === 'No wallet found'}
-                type="warning"
-                title="Wallet Not Found"
-                message="It looks like you don't have a wallet account yet. Please contact our support team to get started."
-                confirmText="Contact Support"
-                cancelText="Go Back"
-                onClose={() => {
-                    setWalletError(null);
-                    router.back();
-                }}
-                onConfirm={() => {
-                    // Logic for support contact could go here
-                    setWalletError(null);
-                }}
-            />
         </SafeAreaView >
     );
 }

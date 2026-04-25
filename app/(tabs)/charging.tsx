@@ -68,7 +68,10 @@ export default function ChargingScreen() {
     if (!activeReservation?.expiryDateTime) return;
 
     const interval = setInterval(() => {
-      const expiry = new Date(activeReservation.expiryDateTime).getTime();
+      // The backend returns times in UTC+3 (East Africa Time) without a timezone suffix.
+      // We append '+03:00' to correctly calculate the countdown against the local device time (UTC+2 usually).
+      const expiryStr = activeReservation.expiryDateTime.replace(' ', 'T') + '+03:00';
+      const expiry = new Date(expiryStr).getTime();
       const now = new Date().getTime();
       const diff = Math.max(0, expiry - now);
 

@@ -152,7 +152,7 @@ export default function BookingsScreen() {
                     >
                         <Text className="text-[#01B764] font-bold">View</Text>
                     </TouchableOpacity> */}
-                    {!isUpcoming && (
+                    {!isUpcoming && item.connectorStatus != 'Reserved' && (
                         <TouchableOpacity className="flex-1 h-12 bg-[#01B764] rounded-2xl items-center justify-center shadow-lg shadow-[#01B764]/20">
                             <Text className="text-white font-bold">Book Again</Text>
                         </TouchableOpacity>

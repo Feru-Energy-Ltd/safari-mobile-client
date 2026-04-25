@@ -1,3 +1,4 @@
+import { AlertType, CustomAlert } from '@/components/CustomAlert';
 import { useColorScheme } from '@/components/useColorScheme';
 import { createReservation } from '@/services/charger.service';
 import { Ionicons } from '@expo/vector-icons';
@@ -11,7 +12,6 @@ import {
     View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Toast from 'react-native-toast-message';
 
 export default function ReviewBookingScreen() {
     const params = useLocalSearchParams();
@@ -19,6 +19,17 @@ export default function ReviewBookingScreen() {
     const isDarkMode = colorScheme === 'dark';
 
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [alertConfig, setAlertConfig] = useState<{
+        visible: boolean;
+        type: AlertType;
+        title: string;
+        message: string;
+    }>({
+        visible: false,
+        type: 'error',
+        title: '',
+        message: '',
+    });
 
     const {
         chargeBoxId,
@@ -49,18 +60,20 @@ export default function ReviewBookingScreen() {
                     }
                 });
             } else {
-                Toast.show({
+                setAlertConfig({
+                    visible: true,
                     type: 'error',
-                    text1: 'Booking Failed',
-                    text2: res.message || 'Something went wrong.'
+                    title: 'Booking Failed',
+                    message: res.message || 'Something went wrong.'
                 });
             }
         } catch (error: any) {
             console.error('Booking failed:', error);
-            Toast.show({
+            setAlertConfig({
+                visible: true,
                 type: 'error',
-                text1: 'Error',
-                text2: error.message || 'Failed to complete booking.'
+                title: 'Error',
+                message: error.message || 'Failed to complete booking.'
             });
         } finally {
             setIsSubmitting(false);
@@ -152,6 +165,14 @@ export default function ReviewBookingScreen() {
                     )}
                 </TouchableOpacity>
             </View>
+
+            <CustomAlert
+                visible={alertConfig.visible}
+                type={alertConfig.type}
+                title={alertConfig.title}
+                message={alertConfig.message}
+                onClose={() => setAlertConfig(prev => ({ ...prev, visible: false }))}
+            />
         </SafeAreaView>
     );
 }
