@@ -124,7 +124,7 @@ export async function getActiveReservation(walletAccount: string): Promise<Reser
 
         // Handle unwrapped response (direct Reservation object)
         if ('id' in res && 'chargeBoxId' in res) {
-            logger.info('Received direct reservation object', { reservation: res, walletAccount });
+            // logger.info('Received direct reservation object', { reservation: res, walletAccount });
             return res as Reservation;
         }
 
@@ -151,4 +151,28 @@ export async function getReservations(page: number = 0, size: number = 20): Prom
 
 export function getConnectorIconUrl(connectorType: string): string {
     return `${BASE_URL}/csms/app/chargers/connectors/icon/${connectorType}`;
+}
+
+export async function startCharging(transactionId: number): Promise<{ status: boolean; data: any; code: number; message: string }> {
+    return authenticatedFetch<{ status: boolean; data: any; code: number; message: string }>(`${BASE_URL}/csms/app/charging/start/${transactionId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    });
+}
+
+export async function stopCharging(transactionId: number): Promise<{ status: boolean; data: any; code: number; message: string }> {
+    return authenticatedFetch<{ status: boolean; data: any; code: number; message: string }>(`${BASE_URL}/csms/app/charging/stop/${transactionId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    });
+}
+
+export async function getChargingHistory(page: number = 0, size: number = 20): Promise<ReservationsResponse> {
+    return authenticatedFetch<ReservationsResponse>(`${BASE_URL}/csms/app/charging/history?page=${page}&size=${size}`, {
+        method: 'GET'
+    });
 }

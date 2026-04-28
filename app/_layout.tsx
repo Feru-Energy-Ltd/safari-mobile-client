@@ -2,7 +2,8 @@ import 'react-native-reanimated';
 import '../global.css';
 
 import { toastConfig } from '@/components/ToastConfig';
-import { checkAuthStatus } from '@/services/auth.service';
+import { checkAuthStatus, getAccessToken } from '@/services/auth.service';
+import { connectStomp, disconnectStomp } from '@/services/stomp.service';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
@@ -97,6 +98,29 @@ function RootLayoutNav() {
     }
     checkAuth();
   }, []);
+
+  // Connect STOMP globally as soon as we have a valid access token
+  useEffect(() => {
+    if (!authChecked) return;
+
+    let mounted = true;
+    async function connectGlobalStomp() {
+      try {
+        const token = await getAccessToken();
+        if (!token || !mounted) return;
+        await connectStomp(token);
+        logger.info('Global STOMP: connected ✓');
+      } catch (e: any) {
+        logger.warn('Global STOMP: could not connect', { reason: e.message });
+      }
+    }
+    connectGlobalStomp();
+
+    return () => {
+      mounted = false;
+      disconnectStomp();
+    };
+  }, [authChecked]);
 
   if (!authChecked) {
     return null;
