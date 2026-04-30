@@ -1,7 +1,5 @@
 /**
  * STOMP Service using @stomp/stompjs
- * 
- * Re-implemented with the "magic" ingredients discovered during raw debugging:
  * 1. Pass Authorization header in the 3rd argument of WebSocket constructor (HTTP Upgrade).
  * 2. Specify STOMP sub-protocols ['v12.stomp', 'v11.stomp', 'v10.stomp'].
  * 3. Standard @stomp/stompjs Client handles heartbeats, framing, and auto-reconnect logic.
@@ -71,11 +69,19 @@ export async function connectStomp(token: string): Promise<void> {
         stompClient = new Client({
             // React Native's WebSocket requires the 3rd argument for custom headers (HTTP upgrade).
             // Sub-protocols are essential for many Spring Boot STOMP configurations.
-            webSocketFactory: () => new (WebSocket as any)(WS_URL, ['v12.stomp', 'v11.stomp', 'v10.stomp'], {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            }),
+            webSocketFactory: () => {
+                const socket = new (WebSocket as any)(WS_URL, ['v12.stomp', 'v11.stomp', 'v10.stomp'], {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                });
+                // Capture raw messages for extreme debugging
+                socket.onmessage = (ev: MessageEvent) => {
+                    const preview = typeof ev.data === 'string' ? ev.data.substring(0, 100) : 'binary data';
+                    console.log('[STOMP RAW DATA]', preview);
+                };
+                return socket;
+            },
             connectHeaders: {
                 Authorization: `Bearer ${token}`,
             },
@@ -95,6 +101,7 @@ export async function connectStomp(token: string): Promise<void> {
                     version: frame.headers['version'],
                     server: frame.headers['server'] ?? 'unknown',
                     session: frame.headers['session'] ?? 'unknown',
+                    user: frame.headers['user-name'] ?? 'unknown',
                 });
                 resolve();
             },
@@ -104,6 +111,7 @@ export async function connectStomp(token: string): Promise<void> {
                 isConnected = false;
                 logger.error('STOMP: protocol error', {
                     message: frame.headers['message'],
+                    details: frame.headers['details'],
                     body: frame.body,
                 });
                 reject(new Error(frame.headers['message'] || 'STOMP error'));
@@ -113,6 +121,13 @@ export async function connectStomp(token: string): Promise<void> {
                 isConnected = false;
                 logger.warn('STOMP: WebSocket closed', { code: evt.code, reason: evt.reason });
             },
+
+            onUnhandledMessage: (message) => {
+                console.log('[STOMP] UNHANDLED MESSAGE ARRIVED:', {
+                    dest: message.headers['destination'],
+                    body: message.body.substring(0, 500)
+                });
+            }
         });
 
         stompClient.activate();
@@ -145,7 +160,9 @@ export function subscribeToChargingSession(
     }
 
     const destination = `/user/queue/ChargingSession/${chargerId}/${connectorId}`;
+    logger.info('[STOMP] Subscribing to:', destination);
     const sub = stompClient.subscribe(destination, (message) => {
+        logger.info('[STOMP] Received message on ChargingSession:', message.headers['destination']);
         try {
             callback(JSON.parse(message.body));
         } catch (e) {

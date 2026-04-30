@@ -28,7 +28,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 
 // ──────────────────────────────────────────────────────────
@@ -54,6 +54,7 @@ function eatToDate(dateStr: string): Date {
 export default function ChargingScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
+  const insets = useSafeAreaInsets();
 
   // ── Data ──────────────────────────────────────────────
   const [reservation, setReservation] = useState<Reservation | null>(null);
@@ -130,7 +131,6 @@ export default function ChargingScreen() {
 
     const setupStomp = async () => {
       try {
-        // Connect if not already connected (singleton — safe to call even if connected)
         if (!isstompConnected()) {
           const token = await getAccessToken();
           if (!token || cancelled) return;
@@ -143,12 +143,14 @@ export default function ChargingScreen() {
         logger.info('ChargingScreen: subscribing to STOMP channels', {
           chargerId: reservation.chargeBoxId,
           connectorId: reservation.connectorId,
+          transactionId: reservation.transactionId
         });
 
         const sub1 = subscribeToChargingSession(
           reservation.chargeBoxId,
           reservation.connectorId,
           (session: ChargingSession) => {
+            console.log('[STOMP] Received ChargingSession message:', session);
             setLiveSession(session);
             if (session.status === 'Charging') setLocalIsCharging(true);
             if (session.status === 'Finishing' || session.status === 'Available') {
@@ -184,7 +186,6 @@ export default function ChargingScreen() {
         });
 
         stompSubs.current = [sub1, sub2, sub3, sub4].filter(Boolean) as { unsubscribe: () => void }[];
-        logger.info('ChargingScreen: STOMP subscriptions active ✓', { count: stompSubs.current.length });
       } catch (err: any) {
         logger.error('ChargingScreen: STOMP setup failed', { err: err.message });
       }
@@ -200,10 +201,9 @@ export default function ChargingScreen() {
   }, [reservation?.id]);
 
   // ──────────────────────────────────────────────────────
-  //  Timers
+  //  timers
   // ──────────────────────────────────────────────────────
 
-  // Reservation countdown
   useEffect(() => {
     if (!reservation?.expiryDateTime || isCharging) return;
 
@@ -218,16 +218,26 @@ export default function ChargingScreen() {
     return () => clearInterval(id);
   }, [reservation?.expiryDateTime, isCharging]);
 
-  // Charging elapsed timer
   useEffect(() => {
     if (!isCharging) return;
 
-    if (!chargingStartRef.current) chargingStartRef.current = Date.now();
-    const id = setInterval(() => {
-      setChargingElapsed(Math.floor((Date.now() - chargingStartRef.current) / 1000));
-    }, 1000);
+    const tick = () => {
+      let startTs = 0;
+      if (reservation?.startTime) {
+        startTs = eatToDate(reservation.startTime).getTime();
+      } else if (chargingStartRef.current) {
+        startTs = chargingStartRef.current;
+      } else {
+        startTs = Date.now();
+        chargingStartRef.current = startTs;
+      }
+      setChargingElapsed(Math.max(0, Math.floor((Date.now() - startTs) / 1000)));
+    };
+
+    tick();
+    const id = setInterval(tick, 1000);
     return () => clearInterval(id);
-  }, [isCharging]);
+  }, [isCharging, reservation?.startTime]);
 
   // ──────────────────────────────────────────────────────
   //  Pulse animation while charging
@@ -240,8 +250,8 @@ export default function ChargingScreen() {
     }
     const loop = Animated.loop(
       Animated.sequence([
-        Animated.timing(pulseAnim, { toValue: 1.08, duration: 900, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-        Animated.timing(pulseAnim, { toValue: 1, duration: 900, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 1.05, duration: 1000, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 1, duration: 1000, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
       ])
     );
     loop.start();
@@ -314,54 +324,53 @@ export default function ChargingScreen() {
     }
   };
 
-  // ──────────────────────────────────────────────────────
-  //  Loading
-  // ──────────────────────────────────────────────────────
-
-  if (isLoading) {
+  if (isLoading && !isRefreshing) {
     return (
-      <View className="flex-1 items-center justify-center bg-white dark:bg-[#0F1117]">
+      <View className="flex-1 items-center justify-center bg-white dark:bg-[#1C1F26]">
         <ActivityIndicator size="large" color="#01B764" />
       </View>
     );
   }
 
-  // ──────────────────────────────────────────────────────
-  //  Render
-  // ──────────────────────────────────────────────────────
-
   return (
-    <SafeAreaView className="flex-1 bg-[#F4F6FB] dark:bg-[#0F1117]">
+    <View className="flex-1 bg-white dark:bg-[#1C1F26]">
       {/* Header */}
-      <View className="px-6 pt-4 pb-3 flex-row items-center justify-between">
-        <Text className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">
-          {isCharging ? 'Charging' : 'Active Session'}
-        </Text>
-        {reservation && (
-          <View
-            className={`px-3 py-1 rounded-full ${isCharging ? 'bg-[#01B764]/15' : 'bg-amber-100 dark:bg-amber-900/30'}`}
-          >
-            <Text className={`text-xs font-bold ${isCharging ? 'text-[#01B764]' : 'text-amber-600 dark:text-amber-400'}`}>
-              {isCharging ? '● LIVE' : reservation.status?.toUpperCase()}
-            </Text>
+      <View
+        className="px-6 pb-4 border-b border-gray-100 dark:border-gray-800 flex-row items-center justify-between"
+        style={{ paddingTop: insets.top + 10 }}
+      >
+        <View>
+          <Text className="text-2xl font-black text-gray-900 dark:text-white">
+            Charging
+          </Text>
+          <Text className="text-gray-500 dark:text-gray-400 font-medium text-xs">
+            {isCharging ? 'Live session in progress' : 'Manage your active sessions'}
+          </Text>
+        </View>
+        {isCharging && (
+          <View className="bg-[#01B764]/10 px-3 py-1.5 rounded-full flex-row items-center border border-[#01B764]/20">
+            <View className="w-2 h-2 rounded-full bg-[#01B764] mr-2" />
+            <Text className="text-[#01B764] font-black text-[10px] uppercase tracking-tighter">Live</Text>
           </View>
         )}
       </View>
 
       <ScrollView
-        contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 20, paddingBottom: 32 }}
+        contentContainerStyle={{ flexGrow: 1, paddingBottom: 40 }}
         refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={() => { setIsRefreshing(true); fetchData(false); }} tintColor="#01B764" />}
         showsVerticalScrollIndicator={false}
       >
         {/* ── Empty State ─────────────────────────────── */}
         {!reservation && !completionVisible && (
-          <View className="flex-1 items-center justify-center py-24">
-            <View className="w-28 h-28 rounded-full bg-gray-100 dark:bg-gray-800 items-center justify-center mb-8">
-              <MaterialCommunityIcons name="ev-station" size={52} color={isDark ? '#4B5563' : '#9CA3AF'} />
+          <View className="flex-1 items-center justify-center py-24 px-10">
+            <View className="w-32 h-32 rounded-[40px] bg-gray-50 dark:bg-[#252932] items-center justify-center mb-8 shadow-sm">
+              <View className="w-20 h-20 rounded-[30px] bg-[#01B764]/10 items-center justify-center">
+                <MaterialCommunityIcons name="ev-station" size={44} color="#01B764" />
+              </View>
             </View>
-            <Text className="text-xl font-bold text-gray-900 dark:text-white mb-2">No Active Booking</Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-center leading-relaxed mb-10 px-8">
-              You don't have an active reservation.{'\n'}Find a charger on the map to book one.
+            <Text className="text-xl font-bold text-gray-900 dark:text-white mb-3 text-center">No Active Sessions</Text>
+            <Text className="text-gray-500 dark:text-gray-400 text-center leading-relaxed mb-10">
+              When you book a charger, it will appear here for you to start and monitor your session.
             </Text>
             <TouchableOpacity
               onPress={() => router.push('/(tabs)')}
@@ -374,207 +383,182 @@ export default function ChargingScreen() {
 
         {/* ── Active Reservation Card (pre-charging) ─── */}
         {reservation && !isCharging && (
-          <View className="mt-2">
-            {/* Station card */}
-            <View className="bg-white dark:bg-[#1A1D27] rounded-3xl p-5 mb-4 shadow-sm border border-gray-100 dark:border-gray-800">
-              <View className="flex-row items-center mb-4">
-                <View className="w-12 h-12 rounded-2xl bg-[#01B764]/10 items-center justify-center mr-3">
-                  <MaterialCommunityIcons name="ev-station" size={26} color="#01B764" />
+          <View className="px-6 mt-6">
+            {/* Main Info Card */}
+            <View className="bg-white dark:bg-[#252932] rounded-[32px] p-6 mb-4 shadow-sm border border-gray-100 dark:border-gray-800">
+              <View className="flex-row items-center mb-6">
+                <View className="w-14 h-14 rounded-2xl bg-[#01B764]/10 items-center justify-center mr-4">
+                  <MaterialCommunityIcons name="ev-station" size={32} color="#01B764" />
                 </View>
                 <View className="flex-1">
-                  <Text className="text-base font-bold text-gray-900 dark:text-white" numberOfLines={1}>{reservation.chargeBoxId}</Text>
-                  <Text className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{reservation.connectorType?.replace(/_/g, ' ')}</Text>
-                </View>
-                <View className="px-3 py-1 bg-[#01B764]/10 rounded-full">
-                  <Text className="text-xs font-bold text-[#01B764]">Connector {reservation.connectorId}</Text>
+                  <Text className="text-lg font-bold text-gray-900 dark:text-white" numberOfLines={1}>
+                    {reservation.chargeBoxId}
+                  </Text>
+                  <Text className="text-sm text-gray-500 dark:text-gray-400 font-medium">
+                    Connector {reservation.connectorId} • {reservation.connectorType?.replace(/_/g, ' ')}
+                  </Text>
                 </View>
               </View>
 
-              {/* Stats row */}
-              <View className="flex-row gap-3">
-                <View className="flex-1 bg-[#F4F6FB] dark:bg-[#0F1117] rounded-2xl p-4 items-center">
-                  <MaterialCommunityIcons name="battery-medium" size={22} color="#6B7280" />
-                  <Text className="text-lg font-black text-gray-900 dark:text-white mt-1">{reservation.batteryLevel}%</Text>
-                  <Text className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">Battery Now</Text>
+              {/* Stats Grid */}
+              <View className="flex-row gap-x-3">
+                <View className="flex-1 bg-gray-50 dark:bg-[#1C1F26] rounded-2xl p-4">
+                  <View className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-900/20 items-center justify-center mb-2">
+                    <MaterialCommunityIcons name="battery-medium" size={18} color="#3B82F6" />
+                  </View>
+                  <Text className="text-base font-black text-gray-900 dark:text-white">{reservation.batteryLevel}%</Text>
+                  <Text className="text-[10px] text-gray-400 uppercase font-black mt-0.5">Initial</Text>
                 </View>
-                <View className="flex-1 bg-[#F4F6FB] dark:bg-[#0F1117] rounded-2xl p-4 items-center">
-                  <MaterialCommunityIcons name="battery-high" size={22} color="#6B7280" />
-                  <Text className="text-lg font-black text-gray-900 dark:text-white mt-1">{reservation.batteryCapacity} kWh</Text>
-                  <Text className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">Capacity</Text>
+                <View className="flex-1 bg-gray-50 dark:bg-[#1C1F26] rounded-2xl p-4">
+                  <View className="w-8 h-8 rounded-lg bg-purple-50 dark:bg-purple-900/20 items-center justify-center mb-2">
+                    <MaterialCommunityIcons name="battery-high" size={18} color="#A855F7" />
+                  </View>
+                  <Text className="text-base font-black text-gray-900 dark:text-white">{reservation.batteryCapacity}</Text>
+                  <Text className="text-[10px] text-gray-400 uppercase font-black mt-0.5">kWh Max</Text>
                 </View>
-                <View className="flex-1 bg-[#F4F6FB] dark:bg-[#0F1117] rounded-2xl p-4 items-center">
-                  <MaterialCommunityIcons name="cash" size={22} color="#6B7280" />
-                  <Text className="text-[15px] font-black text-gray-900 dark:text-white mt-1" numberOfLines={1}>
+                <View className="flex-1 bg-gray-50 dark:bg-[#1C1F26] rounded-2xl p-4">
+                  <View className="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-900/20 items-center justify-center mb-2">
+                    <MaterialCommunityIcons name="cash" size={18} color="#F59E0B" />
+                  </View>
+                  <Text className="text-base font-black text-gray-900 dark:text-white">
                     {reservation.reservationAmount?.toLocaleString()}
                   </Text>
-                  <Text className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">RWF Hold</Text>
+                  <Text className="text-[10px] text-gray-400 uppercase font-black mt-0.5">Hold</Text>
                 </View>
               </View>
             </View>
 
-            {/* Countdown + wallet */}
-            <View className="flex-row gap-3 mb-6">
-              <View className="flex-1 bg-white dark:bg-[#1A1D27] rounded-2xl p-4 flex-row items-center border border-gray-100 dark:border-gray-800">
-                <View className="w-9 h-9 rounded-xl bg-amber-100 dark:bg-amber-900/20 items-center justify-center mr-3">
-                  <Ionicons name="time-outline" size={18} color="#D97706" />
-                </View>
+            {/* Quick Info Bar */}
+            <View className="flex-row gap-3 mb-8">
+              <View className="flex-1 bg-white dark:bg-[#252932] rounded-2xl p-4 flex-row items-center border border-gray-100 dark:border-gray-800">
+                <Ionicons name="time" size={20} color="#F59E0B" className="mr-3" />
                 <View>
-                  <Text className="text-base font-black text-gray-900 dark:text-white">{formatHMS(reservationCountdown)}</Text>
-                  <Text className="text-[11px] text-gray-400 dark:text-gray-500">Expires in</Text>
+                  <Text className="text-sm font-black text-gray-900 dark:text-white">{formatHMS(reservationCountdown)}</Text>
+                  <Text className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">Expires in</Text>
                 </View>
               </View>
-              <View className="flex-1 bg-white dark:bg-[#1A1D27] rounded-2xl p-4 flex-row items-center border border-gray-100 dark:border-gray-800">
-                <View className="w-9 h-9 rounded-xl bg-[#01B764]/10 items-center justify-center mr-3">
-                  <Ionicons name="wallet-outline" size={18} color="#01B764" />
-                </View>
+              <View className="flex-1 bg-white dark:bg-[#252932] rounded-2xl p-4 flex-row items-center border border-gray-100 dark:border-gray-800">
+                <Ionicons name="wallet" size={20} color="#01B764" className="mr-3" />
                 <View>
-                  <Text className="text-base font-black text-gray-900 dark:text-white">
+                  <Text className="text-sm font-black text-gray-900 dark:text-white" numberOfLines={1}>
                     {walletBalance != null ? `${walletBalance.toLocaleString()} RWF` : '—'}
                   </Text>
-                  <Text className="text-[11px] text-gray-400 dark:text-gray-500">Wallet Balance</Text>
+                  <Text className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">Wallet</Text>
                 </View>
               </View>
             </View>
 
-            {/* CTA */}
+            {/* Actions */}
             <TouchableOpacity
               onPress={handleStartCharging}
               disabled={isStarting || isCancelling}
-              className="w-full h-14 bg-[#01B764] rounded-full items-center justify-center flex-row shadow-lg shadow-[#01B764]/25 mb-3"
+              className="w-full h-16 bg-[#01B764] rounded-3xl items-center justify-center flex-row shadow-lg shadow-[#01B764]/25"
               style={{ opacity: (isStarting || isCancelling) ? 0.7 : 1 }}
             >
-              {isStarting ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <>
-                  <Ionicons name="flash" size={20} color="#fff" style={{ marginRight: 8 }} />
-                  <Text className="text-white font-bold text-base">Start Charging</Text>
-                </>
-              )}
+              <Ionicons name="flash" size={22} color="#fff" style={{ marginRight: 10 }} />
+              <Text className="text-white font-bold text-lg">Start Charging</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               onPress={() => setAlertVisible(true)}
               disabled={isCancelling || isStarting}
-              className="w-full py-3 items-center"
-              style={{ opacity: (isCancelling || isStarting) ? 0.5 : 1 }}
+              className="w-full py-6 items-center"
             >
-              {isCancelling
-                ? <ActivityIndicator color="#EF4444" size="small" />
-                : <Text className="text-[#EF4444] font-semibold text-sm">Cancel Reservation</Text>
-              }
+              <Text className="text-red-500 font-bold text-sm uppercase tracking-widest">Cancel Reservation</Text>
             </TouchableOpacity>
           </View>
         )}
 
         {/* ── Live Charging View ─────────────────────── */}
         {reservation && isCharging && (
-          <View className="mt-2 items-center">
-            {/* Big circle */}
-            <Animated.View
-              style={{ transform: [{ scale: pulseAnim }] }}
-              className="mb-8"
-            >
-              {/* Outer glow ring */}
-              <View
+          <View className="mt-8 px-6 items-center">
+            {/* Visual Dashboard Ring */}
+            <View className="items-center justify-center mb-10">
+              <Animated.View
+                style={{ transform: [{ scale: pulseAnim }] }}
                 className="w-64 h-64 rounded-full items-center justify-center"
-                style={{
-                  shadowColor: '#01B764',
-                  shadowOffset: { width: 0, height: 0 },
-                  shadowOpacity: 0.5,
-                  shadowRadius: 30,
-                  elevation: 20,
-                  backgroundColor: isDark ? '#0F1117' : '#fff',
-                  borderWidth: 8,
-                  borderColor: '#01B764',
-                }}
               >
-                {/* Inner white circle for layered look */}
                 <View
-                  className="absolute inset-3 rounded-full"
-                  style={{ backgroundColor: isDark ? '#0F1117' : '#fff', opacity: 0.6 }}
-                />
-                {/* Content */}
-                <View className="items-center z-10">
-                  <Ionicons name="flash" size={36} color="#F59E0B" style={{ marginBottom: 4 }} />
-                  <View className="flex-row items-end">
-                    <Text className="text-6xl font-black text-gray-900 dark:text-white">
-                      {liveSession?.energy != null
-                        ? liveSession.energy.toFixed(1)
-                        : (reservation.batteryCapacity ?? 0)}
-                    </Text>
-                    <Text className="text-xl font-bold text-gray-500 dark:text-gray-400 mb-2 ml-1">kWh</Text>
+                  className="w-full h-full rounded-full items-center justify-center"
+                  style={{
+                    backgroundColor: isDark ? '#252932' : '#fff',
+                    borderWidth: 12,
+                    borderColor: '#01B764',
+                    shadowColor: '#01B764',
+                    shadowOffset: { width: 0, height: 0 },
+                    shadowOpacity: 0.3,
+                    shadowRadius: 20,
+                    elevation: 15
+                  }}
+                >
+                  <View className="items-center">
+                    <Ionicons name="flash" size={32} color="#F59E0B" className="mb-2" />
+                    <View className="flex-row items-end">
+                      <Text className="text-6xl font-black text-gray-900 dark:text-white leading-[60px]">
+                        {liveSession?.stateOfCharge != null
+                          ? liveSession.stateOfCharge.toFixed(0)
+                          : (reservation.batteryLevel ?? 0)}
+                      </Text>
+                      <Text className="text-2xl font-bold text-gray-400 dark:text-gray-500 mb-2 ml-1">%</Text>
+                    </View>
+                    <Text className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mt-1">SoC Level</Text>
                   </View>
-                  <Text className="text-sm font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Energy</Text>
-                </View>
-              </View>
-            </Animated.View>
 
-            {/* Stats card */}
-            <View className="w-full bg-white dark:bg-[#1A1D27] rounded-3xl overflow-hidden border border-gray-100 dark:border-gray-800 mb-8 shadow-sm">
-              {/* Row 1 */}
-              <View className="flex-row border-b border-gray-100 dark:border-gray-700">
-                <View className="flex-1 py-5 items-center border-r border-gray-100 dark:border-gray-700">
-                  <Text className="text-xl font-black text-gray-900 dark:text-white">{formatHMS(chargingElapsed)}</Text>
-                  <Text className="text-[12px] text-gray-400 dark:text-gray-500 mt-1">Charging Time</Text>
+                  {/* Smaller info bubbles around the ring could go here */}
                 </View>
-                <View className="flex-1 py-5 items-center">
-                  <Text className="text-xl font-black text-gray-900 dark:text-white">
-                    {liveSession?.stateOfCharge != null
-                      ? `${liveSession.stateOfCharge.toFixed(0)}%`
-                      : `${reservation.batteryLevel}%`}
-                  </Text>
-                  <Text className="text-[12px] text-gray-400 dark:text-gray-500 mt-1">Battery</Text>
-                </View>
+              </Animated.View>
+            </View>
+
+            {/* Metrics List */}
+            <View className="w-full bg-white dark:bg-[#252932] rounded-[32px] p-4 flex-row flex-wrap border border-gray-100 dark:border-gray-800 shadow-sm mb-10">
+              <View className="w-1/2 p-3 border-r border-b border-gray-50 dark:border-gray-800">
+                <Text className="text-[10px] text-gray-400 font-black uppercase mb-1">Time Elapsed</Text>
+                <Text className="text-lg font-black text-gray-900 dark:text-white">{formatHMS(chargingElapsed)}</Text>
               </View>
-              {/* Row 2 */}
-              <View className="flex-row">
-                <View className="flex-1 py-5 items-center border-r border-gray-100 dark:border-gray-700">
-                  <Text className="text-xl font-black text-gray-900 dark:text-white">
-                    {liveSession?.timeToFullCharge != null
-                      ? `${liveSession.timeToFullCharge.toFixed(0)} min`
-                      : '—'}
-                  </Text>
-                  <Text className="text-[12px] text-gray-400 dark:text-gray-500 mt-1">Time to Full</Text>
-                </View>
-                <View className="flex-1 py-5 items-center">
-                  <Text className="text-xl font-black text-[#01B764]">
-                    {liveSession?.cost != null
-                      ? `${liveSession.cost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} RWF`
-                      : `${(reservation.chargingAmount ?? 0).toLocaleString()} RWF`}
-                  </Text>
-                  <Text className="text-[12px] text-gray-400 dark:text-gray-500 mt-1">Total Cost</Text>
-                </View>
+              <View className="w-1/2 p-3 border-b border-gray-50 dark:border-gray-800">
+                <Text className="text-[10px] text-gray-400 font-black uppercase mb-1">Energy (kWh)</Text>
+                <Text className="text-lg font-black text-gray-900 dark:text-white">
+                  {liveSession?.energy != null ? liveSession.energy.toFixed(1) : '0.0'}
+                </Text>
+              </View>
+              <View className="w-1/2 p-3 border-r border-gray-50 dark:border-gray-800">
+                <Text className="text-[10px] text-gray-400 font-black uppercase mb-1">Time to Full</Text>
+                <Text className="text-lg font-black text-gray-900 dark:text-white">
+                  {liveSession?.timeToFullCharge != null ? `${liveSession.timeToFullCharge.toFixed(0)}m` : '—'}
+                </Text>
+              </View>
+              <View className="w-1/2 p-3">
+                <Text className="text-[10px] text-gray-400 font-black uppercase mb-1">Session Cost</Text>
+                <Text className="text-lg font-black text-[#01B764]">
+                  {liveSession?.cost != null
+                    ? `${liveSession.cost.toLocaleString(undefined, { maximumFractionDigits: 0 })}`
+                    : `${(reservation.chargingAmount ?? 0).toLocaleString()}`}
+                  <Text className="text-[10px] font-bold"> RWF</Text>
+                </Text>
               </View>
             </View>
 
-            {/* OCPP status badge */}
-            {liveStatus && (
-              <View className="mb-6 px-4 py-2 bg-[#01B764]/10 rounded-full">
-                <Text className="text-sm font-semibold text-[#01B764]">
-                  EVSE: {liveStatus}
-                </Text>
-              </View>
-            )}
-
-            {/* Stop button */}
+            {/* Stop Action */}
             <TouchableOpacity
               onPress={handleStopCharging}
               disabled={isStopping}
-              className="w-full h-14 bg-[#01B764] rounded-full items-center justify-center shadow-lg shadow-[#01B764]/25"
+              className="w-full h-16 bg-[#F75555] rounded-3xl items-center justify-center flex-row shadow-lg shadow-red-500/20"
               style={{ opacity: isStopping ? 0.7 : 1 }}
             >
               {isStopping ? (
                 <ActivityIndicator color="#fff" />
               ) : (
-                <Text className="text-white font-bold text-base">Stop Charging</Text>
+                <>
+                  <Ionicons name="stop-circle" size={22} color="#fff" style={{ marginRight: 10 }} />
+                  <Text className="text-white font-bold text-lg">Stop Charging</Text>
+                </>
               )}
             </TouchableOpacity>
           </View>
         )}
       </ScrollView>
 
-      {/* ── Cancel Confirmation Alert ────────────────── */}
+      {/* Confirmation & Completion Overlays remain mostly same but standardized fonts */}
       <CustomAlert
         visible={alertVisible}
         type="confirm"
@@ -586,30 +570,27 @@ export default function ChargingScreen() {
         onConfirm={handleCancelReservation}
       />
 
-      {/* ── Completion Modal ─────────────────────────── */}
-      <Modal visible={completionVisible} transparent animationType="fade" onRequestClose={() => setCompletionVisible(false)}>
+      <Modal visible={completionVisible} transparent animationType="fade">
         <View className="flex-1 bg-black/60 items-center justify-center px-6">
-          <View className="bg-white dark:bg-[#1A1D27] w-full rounded-[32px] p-8 items-center shadow-2xl overflow-hidden">
-            {/* Decorative dots */}
-            <View className="absolute top-8 left-8 w-2.5 h-2.5 rounded-full bg-[#01B764]/30" />
-            <View className="absolute top-16 right-10 w-4 h-4 rounded-full bg-[#01B764]/15" />
-            <View className="absolute bottom-28 left-10 w-2 h-2 rounded-full bg-[#01B764]/50" />
-            <View className="absolute bottom-20 right-8 w-3 h-3 rounded-full bg-[#01B764]/20" />
-
-            <View className="w-24 h-24 bg-[#01B764] rounded-full items-center justify-center mt-2 mb-7 shadow-xl shadow-[#01B764]/30">
-              <Ionicons name="battery-charging" size={44} color="#fff" />
+          <View className="bg-white dark:bg-[#1C1F26] w-full rounded-[40px] p-8 items-center shadow-2xl">
+            <View className="w-20 h-20 bg-[#01B764] rounded-full items-center justify-center mb-6">
+              <Ionicons name="checkmark-circle" size={48} color="#fff" />
             </View>
-
-            <Text className="text-2xl font-black text-[#01B764] text-center">Charging 100%</Text>
-            <Text className="text-2xl font-black text-[#01B764] text-center mb-5">Complete!</Text>
-
-            <Text className="text-gray-600 dark:text-gray-400 text-center text-sm leading-relaxed mb-8">
-              A total of{' '}
-              <Text className="font-bold text-gray-800 dark:text-white">
-                {finalCost.toLocaleString(undefined, { minimumFractionDigits: 2 })} RWF
-              </Text>
-              {' '}has been charged from your e-wallet.
+            <Text className="text-2xl font-black text-gray-900 dark:text-white mb-2 text-center">Session Complete</Text>
+            <Text className="text-gray-500 dark:text-gray-400 text-center mb-8">
+              Your vehicle has been charged. Summary of your session:
             </Text>
+
+            <View className="w-full bg-gray-50 dark:bg-[#252932] rounded-3xl p-6 mb-8">
+              <View className="flex-row justify-between mb-4">
+                <Text className="text-gray-500 font-bold">Energy</Text>
+                <Text className="text-gray-900 dark:text-white font-black">{liveSession?.energy?.toFixed(1) || 0} kWh</Text>
+              </View>
+              <View className="flex-row justify-between pt-4 border-t border-gray-100 dark:border-gray-800">
+                <Text className="text-gray-500 font-bold">Total Cost</Text>
+                <Text className="text-[#01B764] font-black text-xl">{finalCost.toLocaleString()} RWF</Text>
+              </View>
+            </View>
 
             <TouchableOpacity
               onPress={() => { setCompletionVisible(false); setReservation(null); }}
@@ -620,6 +601,6 @@ export default function ChargingScreen() {
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 }
