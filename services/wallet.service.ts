@@ -60,26 +60,22 @@ export interface TopUpResponse {
 }
 
 export async function getWalletBalance(): Promise<WalletInfo> {
-    // New endpoint: /payment/wallets/me
     return authenticatedFetch<WalletInfo>(`${BASE_URL}/payment/wallets/me`);
 }
 
 export async function getTransactions(accountNumber: string, page: number = 0, size: number = 20): Promise<TransactionResponse> {
-    // New endpoint: /payment/wallets/accounts/{accountNumber}/transactions
     return authenticatedFetch<TransactionResponse>(
         `${BASE_URL}/payment/wallets/accounts/${accountNumber}/transactions?page=${page}&size=${size}`
     );
 }
 
 export async function getRecentTransactions(accountNumber: string): Promise<TransactionResponse | Transaction[]> {
-    // New endpoint: /payment/wallets/accounts/{accountNumber}/transactions/recents
     return authenticatedFetch<TransactionResponse | Transaction[]>(
         `${BASE_URL}/payment/wallets/accounts/${accountNumber}/transactions/recents`
     );
 }
 
 export async function topUpWallet(payload: TopUpRequest): Promise<TopUpResponse> {
-    // New endpoint: /payment/wallets/topup
     return authenticatedFetch<TopUpResponse>(`${BASE_URL}/payment/wallets/topup`, {
         method: 'POST',
         body: JSON.stringify(payload),
@@ -87,6 +83,5 @@ export async function topUpWallet(payload: TopUpRequest): Promise<TopUpResponse>
 }
 
 export async function getPaymentProviders(): Promise<PaymentProvider[]> {
-    // New endpoint: /payment/wallets/payment-providers
     return authenticatedFetch<PaymentProvider[]>(`${BASE_URL}/payment/wallets/payment-providers`);
 }

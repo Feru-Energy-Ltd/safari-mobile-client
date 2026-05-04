@@ -1,5 +1,6 @@
 import { useColorScheme } from '@/components/useColorScheme.web';
 import { getTransactions, getWalletBalance, Transaction } from '@/services/wallet.service';
+import { formatCurrency, formatTxDate } from '@/utils/formatting';
 import { logger } from '@/utils/logger';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -98,20 +99,6 @@ export default function TransactionsScreen() {
         return result;
     }, [transactions, searchQuery, statusFilter, typeFilter]);
 
-    const formatCurrency = (amount: number | string) => {
-        const value = typeof amount === 'string' ? parseFloat(amount) : amount;
-        return new Intl.NumberFormat('en-RW', {
-            style: 'currency',
-            currency: 'RWF',
-            minimumFractionDigits: 0,
-        }).format(value);
-    };
-
-    const formatTxDate = (arr?: number[]) => {
-        if (!arr || arr.length < 6) return new Date();
-        const [year, month, day, hour, minute, second] = arr;
-        return new Date(year, month - 1, day, hour, minute, second);
-    };
 
     const renderTransactionItem = ({ item }: { item: Transaction }) => (
         <TouchableOpacity

@@ -1,3 +1,4 @@
+import { BOOKING_STATUS_MAP, BOOKING_TABS, BookingTab } from '@/constants/bookings';
 import { getAccessToken } from '@/services/auth.service';
 import { getConnectorIconUrl, getReservations, ReservationRecord } from '@/services/charger.service';
 import { logger } from '@/utils/logger';
@@ -16,20 +17,14 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-type TabType = 'Upcoming' | 'Completed' | 'Canceled';
 
-const STATUS_MAP: Record<string, TabType> = {
-    'Accepted': 'Upcoming',
-    'Expired': 'Completed',
-    'Cancelled': 'Canceled'
-};
 
 export default function BookingsScreen() {
     const router = useRouter();
     const { colorScheme } = useColorScheme();
     const isDarkMode = colorScheme === 'dark';
 
-    const [activeTab, setActiveTab] = useState<TabType>('Upcoming');
+    const [activeTab, setActiveTab] = useState<BookingTab>('Upcoming');
     const [bookings, setBookings] = useState<ReservationRecord[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
@@ -56,7 +51,7 @@ export default function BookingsScreen() {
         fetchBookings();
     }, [fetchBookings]);
 
-    const filteredBookings = bookings.filter(b => STATUS_MAP[b.reservationStatus] === activeTab);
+    const filteredBookings = bookings.filter(b => BOOKING_STATUS_MAP[b.reservationStatus] === activeTab);
 
     const formatDate = (timestamp: number) => {
         return new Date(timestamp).toLocaleDateString('en-US', {
@@ -97,7 +92,7 @@ export default function BookingsScreen() {
                     </View>
                     <View className={`${isCanceled ? 'bg-red-50 dark:bg-red-900/20' : 'bg-green-50 dark:bg-green-900/20'} px-3 py-1.5 rounded-lg`}>
                         <Text className={`${isCanceled ? 'text-red-500' : 'text-[#01B764]'} font-bold text-xs`}>
-                            {STATUS_MAP[item.reservationStatus]}
+                            {BOOKING_STATUS_MAP[item.reservationStatus]}
                         </Text>
                     </View>
                 </View>
@@ -152,7 +147,7 @@ export default function BookingsScreen() {
                     >
                         <Text className="text-[#01B764] font-bold">View</Text>
                     </TouchableOpacity> */}
-                    {!isUpcoming && item.connectorStatus != 'Reserved' && (
+                    {!isUpcoming && item.connectorStatus !== 'Reserved' && (
                         <TouchableOpacity className="flex-1 h-12 bg-[#01B764] rounded-2xl items-center justify-center shadow-lg shadow-[#01B764]/20">
                             <Text className="text-white font-bold">Book Again</Text>
                         </TouchableOpacity>
@@ -179,7 +174,7 @@ export default function BookingsScreen() {
 
             {/* Tabs */}
             <View className="flex-row px-6 border-b border-gray-100 dark:border-gray-800">
-                {(['Upcoming', 'Completed', 'Canceled'] as TabType[]).map((tab) => (
+                {BOOKING_TABS.map((tab) => (
                     <TouchableOpacity
                         key={tab}
                         onPress={() => setActiveTab(tab)}

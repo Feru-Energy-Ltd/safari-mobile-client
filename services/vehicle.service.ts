@@ -2,8 +2,6 @@ import { authenticatedFetch } from './auth.service';
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 
-// Removing redundant handleResponse as authenticatedFetch handles it.
-
 export interface ConnectorType {
     id: number;
     connectorName: string;

@@ -13,6 +13,7 @@ import {
   subscribeToWalletBalance,
 } from '@/services/stomp.service';
 import { getWalletBalance } from '@/services/wallet.service';
+import { eatToDate, formatHMS } from '@/utils/formatting';
 import { logger } from '@/utils/logger';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -31,21 +32,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 
-// ──────────────────────────────────────────────────────────
-//  Helpers
-// ──────────────────────────────────────────────────────────
 
-function formatHMS(totalSeconds: number): string {
-  const h = Math.floor(totalSeconds / 3600);
-  const m = Math.floor((totalSeconds % 3600) / 60);
-  const s = totalSeconds % 60;
-  return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-}
-
-function eatToDate(dateStr: string): Date {
-  // Backend sends EAT (UTC+3) without timezone suffix
-  return new Date(dateStr.replace(' ', 'T') + '+03:00');
-}
 
 // ──────────────────────────────────────────────────────────
 //  Component
