@@ -1,5 +1,6 @@
 import { useColorScheme } from '@/components/useColorScheme.web';
 import { getTransactions, getWalletBalance, Transaction } from '@/services/wallet.service';
+import { formatCurrency, formatTxDate } from '@/utils/formatting';
 import { logger } from '@/utils/logger';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -35,7 +36,13 @@ export default function TransactionsScreen() {
     const fetchTransactions = async (accNum: string) => {
         try {
             const response = await getTransactions(accNum, 0, 100);
-            setTransactions(response.content);
+            if (Array.isArray(response)) {
+                setTransactions(response);
+            } else if (response && (response as any).content) {
+                setTransactions((response as any).content);
+            } else {
+                setTransactions([]);
+            }
         } catch (error) {
             logger.error('Error fetching transactions:', error);
         } finally {
@@ -82,62 +89,54 @@ export default function TransactionsScreen() {
         if (searchQuery) {
             const lowQuery = searchQuery.toLowerCase();
             result = result.filter(tx =>
-                tx.type.toLowerCase().includes(lowQuery) ||
-                tx.transactionId.toLowerCase().includes(lowQuery) ||
-                tx.status.toLowerCase().includes(lowQuery) ||
-                tx.amount.toLowerCase().includes(lowQuery)
+                (tx.type && tx.type.toLowerCase().includes(lowQuery)) ||
+                (tx.transactionId && tx.transactionId.toLowerCase().includes(lowQuery)) ||
+                (tx.status && tx.status.toLowerCase().includes(lowQuery)) ||
+                (tx.transactedAmount && tx.transactedAmount.toString().includes(lowQuery))
             );
         }
 
         return result;
     }, [transactions, searchQuery, statusFilter, typeFilter]);
 
-    const formatCurrency = (amount: number | string) => {
-        const value = typeof amount === 'string' ? parseFloat(amount) : amount;
-        return new Intl.NumberFormat('en-RW', {
-            style: 'currency',
-            currency: 'RWF',
-            minimumFractionDigits: 0,
-        }).format(value);
-    };
 
     const renderTransactionItem = ({ item }: { item: Transaction }) => (
         <TouchableOpacity
             className="bg-white dark:bg-[#252932] mb-4 p-4 rounded-3xl flex-row items-center border border-gray-100 dark:border-gray-800 shadow-sm mx-6"
         >
-            <View className={`w-12 h-12 rounded-full items-center justify-center mr-4 ${item.type === 'CREDIT' ? 'bg-green-50 dark:bg-green-900/20' : 'bg-red-50 dark:bg-red-900/20'
+            <View className={`w-12 h-12 rounded-full items-center justify-center mr-4 ${item.type === 'CREDIT' || item.type === 'REFUND' ? 'bg-green-50 dark:bg-green-900/20' : 'bg-red-50 dark:bg-red-900/20'
                 }`}>
                 <Ionicons
-                    name={item.type === 'CREDIT' ? 'arrow-down' : 'arrow-up'}
+                    name={item.type === 'CREDIT' || item.type === 'REFUND' ? 'arrow-down' : 'arrow-up'}
                     size={20}
-                    color={item.type === 'CREDIT' ? '#01B764' : '#F75555'}
+                    color={item.type === 'CREDIT' || item.type === 'REFUND' ? '#01B764' : '#F75555'}
                 />
             </View>
 
             <View className="flex-1">
                 <View className="flex-row items-center mb-1">
-                    <View className={`px-2 py-0.5 rounded-md mr-2 ${item.type === 'CREDIT' ? 'border border-green-500' : 'border border-red-500'
+                    <View className={`px-2 py-0.5 rounded-md mr-2 ${item.type === 'CREDIT' || item.type === 'REFUND' ? 'border border-green-500' : 'border border-red-500'
                         }`}>
-                        <Text className={`text-[10px] font-bold ${item.type === 'CREDIT' ? 'text-green-500' : 'text-red-500'
+                        <Text className={`text-[10px] font-bold ${item.type === 'CREDIT' || item.type === 'REFUND' ? 'text-green-500' : 'text-red-500'
                             }`}>
-                            {item.type === 'CREDIT' ? 'Topup' : 'Paid'}
+                            {item.type === 'CREDIT' ? 'Topup' : item.type === 'REFUND' ? 'Refund' : 'Paid'}
                         </Text>
                     </View>
                     <Text className="font-bold text-gray-900 dark:text-white flex-1" numberOfLines={1}>
-                        {item.type === 'CREDIT' ? 'Top Up Wallet' : 'Charging Service'}
+                        {item.type === 'CREDIT' ? 'Top Up Wallet' : item.type === 'REFUND' ? 'Refund' : 'Charging Service'}
                     </Text>
                 </View>
                 <Text className="text-xs text-gray-500 dark:text-gray-400">
-                    {new Date(item.transactionDate).toLocaleDateString()} • {new Date(item.transactionDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {formatTxDate(item.createdAt).toLocaleDateString()} • {formatTxDate(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </Text>
             </View>
 
             <View className="items-end">
-                <Text className={`font-bold ${item.type === 'CREDIT' ? 'text-[#01B764]' : 'text-[#F75555]'
+                <Text className={`font-bold ${item.type === 'CREDIT' || item.type === 'REFUND' ? 'text-[#01B764]' : 'text-[#F75555]'
                     }`}>
-                    {item.type === 'CREDIT' ? '+' : '-'} {formatCurrency(item.amount)}
+                    {item.type === 'CREDIT' || item.type === 'REFUND' ? '+' : '-'} {formatCurrency(item.transactedAmount)}
                 </Text>
-                <Text className={`text-[10px] ${item.status === 'SUCCESSFUL' ? 'text-green-500' : 'text-orange-500'
+                <Text className={`text-[10px] ${item.status === 'SUCCESSFUL' || item.status === 'COMPLETED' ? 'text-green-500' : 'text-orange-500'
                     }`}>
                     {item.status}
                 </Text>
@@ -243,7 +242,7 @@ export default function TransactionsScreen() {
 
                                 <Text className="text-lg font-bold text-gray-900 dark:text-white mb-4">Status</Text>
                                 <View className="flex-row flex-wrap gap-3 mb-10">
-                                    {['ALL', 'SUCCESSFUL', 'PENDING', 'FAILED'].map((status) => (
+                                    {['ALL', 'SUCCESSFUL', 'COMPLETED', 'PENDING', 'FAILED'].map((status) => (
                                         <TouchableOpacity
                                             key={status}
                                             onPress={() => setStatusFilter(status as any)}
@@ -278,7 +277,7 @@ export default function TransactionsScreen() {
             ) : (
                 <FlatList
                     data={filteredTransactions}
-                    keyExtractor={(item) => item.transactionId}
+                    keyExtractor={(item, index) => item.id?.toString() || item.transactionId || index.toString()}
                     renderItem={renderTransactionItem}
                     contentContainerStyle={{ paddingTop: 10, paddingBottom: 40 }}
                     refreshControl={

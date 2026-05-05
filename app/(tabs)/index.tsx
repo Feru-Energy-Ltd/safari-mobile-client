@@ -3,6 +3,7 @@ import { getProfile, UserProfile } from '@/services/auth.service';
 import { Charger, getChargers } from '@/services/charger.service';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
+import { router } from 'expo-router';
 import { Fuel, List, Map as MapIcon, Navigation2, Search, Target } from 'lucide-react-native';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -450,7 +451,16 @@ export default function HomeScreen() {
                 <TouchableOpacity className="flex-1 h-14 border border-[#01B764] rounded-2xl items-center justify-center">
                   <Text className="text-[#01B764] font-bold text-lg">View</Text>
                 </TouchableOpacity>
-                <TouchableOpacity className="flex-1 h-14 bg-[#01B764] rounded-2xl items-center justify-center shadow-lg">
+                <TouchableOpacity
+                  onPress={() => router.push({
+                    pathname: '/booking/select-vehicle',
+                    params: {
+                      chargeBoxId: selectedCharger.chargeBoxId,
+                      connectorId: '1' // Defaulting to 1 as per user's API example
+                    }
+                  })}
+                  className="flex-1 h-14 bg-[#01B764] rounded-2xl items-center justify-center shadow-lg"
+                >
                   <Text className="text-white font-bold text-lg">Book</Text>
                 </TouchableOpacity>
               </View>

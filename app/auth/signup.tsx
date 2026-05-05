@@ -106,7 +106,10 @@ export default function SignupScreen() {
                 topOffset: 60,
             });
 
-            router.push('/auth/login');
+            router.push({
+                pathname: '/auth/verify-otp',
+                params: { email }
+            });
         } catch (error: any) {
             showAlert('error', error?.title || 'Registration Failed', error?.message ?? 'Could not reach the server.');
         } finally {

@@ -1,5 +1,5 @@
 import { useColorScheme } from '@/components/useColorScheme.web';
-import { getWalletBalance, topUpWallet, WalletInfo } from '@/services/wallet.service';
+import { getWalletBalance, WalletInfo } from '@/services/wallet.service';
 import { logger } from '@/utils/logger';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -59,41 +59,10 @@ export default function TopUpScreen() {
             return;
         }
 
-        if (!walletInfo?.accountNumber) {
-            Toast.show({
-                type: 'error',
-                text1: 'Error',
-                text2: 'Wallet information not available.',
-            });
-            return;
-        }
-
-        setLoading(true);
-        try {
-            const response = await topUpWallet({
-                amount: parseInt(amount),
-                phoneNumber: walletInfo.accountNumber
-            });
-
-            if (response.status) {
-                Toast.show({
-                    type: 'success',
-                    text1: 'Request Accepted',
-                    text2: 'Your top-up request is being processed.',
-                });
-                router.back();
-            } else {
-                throw new Error(response.message || 'Top-up failed');
-            }
-        } catch (error: any) {
-            Toast.show({
-                type: 'error',
-                text1: 'Top-up Failed',
-                text2: error.message || 'Something went wrong.',
-            });
-        } finally {
-            setLoading(false);
-        }
+        router.push({
+            pathname: '/wallet/provider-select',
+            params: { amount }
+        });
     };
 
     const formatCurrency = (val: string) => {

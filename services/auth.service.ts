@@ -1,6 +1,7 @@
 import { logger } from '@/utils/logger';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
+import Toast from 'react-native-toast-message';
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 
@@ -60,6 +61,15 @@ export interface UserProfile {
     phone: string;
     enabled: boolean;
     createdAt: string;
+}
+
+export interface VerifyOtpRequest {
+    email: string;
+    otp: string;
+}
+
+export interface ResendOtpRequest {
+    email: string;
 }
 
 
@@ -139,6 +149,11 @@ export async function checkAuthStatus(): Promise<boolean> {
             return true;
         } catch (e) {
             await clearTokens();
+            Toast.show({
+                type: 'info',
+                text1: 'Session Expired',
+                text2: 'Please log in again to continue.'
+            });
             return false;
         }
     }
@@ -242,12 +257,22 @@ export async function authenticatedFetch<T>(url: string, options: RequestInit = 
             } catch (err) {
                 // If refresh fails, log out the user and redirect to login
                 await clearTokens();
+                Toast.show({
+                    type: 'info',
+                    text1: 'Session Expired',
+                    text2: 'Please log in again to continue.'
+                });
                 router.replace('/auth/login');
                 throw new Error('Your session has expired. Please log in again.');
             }
         } else {
             // No refresh token available
             await clearTokens();
+            Toast.show({
+                type: 'info',
+                text1: 'Session Expired',
+                text2: 'Please log in again to continue.'
+            });
             router.replace('/auth/login');
             throw new Error('Your session has expired. Please log in again.');
         }
@@ -371,4 +396,22 @@ export async function changePassword(payload: { oldPassword: string; newPassword
         method: 'POST',
         body: JSON.stringify(payload),
     });
+}
+
+export async function verifyOtp(payload: VerifyOtpRequest): Promise<{ message: string }> {
+    const response = await fetch(`${BASE_URL}/auth/verify-otp`, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify(payload),
+    });
+    return handleResponse<{ message: string }>(response);
+}
+
+export async function resendOtp(payload: ResendOtpRequest): Promise<{ message: string }> {
+    const response = await fetch(`${BASE_URL}/auth/resend-otp`, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify(payload),
+    });
+    return handleResponse<{ message: string }>(response);
 }
